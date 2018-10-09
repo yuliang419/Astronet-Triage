@@ -21,12 +21,17 @@ from __future__ import print_function
 import numpy as np
 
 
+class SparseLightCurveError(Exception):
+    """Indicates light curve with too few points in chosen time range."""
+    pass
+
+
 def median_filter(x, y, num_bins, bin_width=None, x_min=None, x_max=None):
   """Computes the median y-value in uniform intervals (bins) along the x-axis.
 
   The interval [x_min, x_max) is divided into num_bins uniformly spaced
   intervals of width bin_width. The value computed for each bin is the median
-  of all y-values whose corresponding x-value is in the interval.
+  of all y-values whose corresponding x-value is in the interval. Bins are overlapping if bin_width > bin_spacing.
 
   NOTE: x must be sorted in ascending order or the results will be incorrect.
 
@@ -49,6 +54,7 @@ def median_filter(x, y, num_bins, bin_width=None, x_min=None, x_max=None):
 
   Raises:
     ValueError: If an argument has an inappropriate value.
+    SparseLightCurveError: If light curve has too few points within given window.
   """
   if num_bins < 2:
     raise ValueError("num_bins must be at least 2. Got: %d" % num_bins)
@@ -67,10 +73,17 @@ def median_filter(x, y, num_bins, bin_width=None, x_min=None, x_max=None):
   if x_min >= x_max:
     raise ValueError("x_min (got: %d) must be less than x_max (got: %d)" %
                      (x_min, x_max))
-  if x_min > x[-1]:
-    raise ValueError(
-        "x_min (got: %d) must be less than or equal to the largest value of x "
-        "(got: %d)" % (x_min, x[-1]))
+
+  # This is unhelpful for sparse light curves. Use more specific error below
+  # if x_min > x[-1]:
+  #   raise ValueError(
+  #       "x_min (got: %d) must be less than or equal to the largest value of x "
+  #       "(got: %d)" % (x_min, x[-1]))
+
+  # Drop light curves with no/few points in time range considered, or too little coverage in time
+  in_range = np.where((x >= x_min) & (x <= x_max))[0]
+  if (len(in_range) < 5) or (x[-1] - x[0] < (x_max - x_min) / 2 ):
+    raise SparseLightCurveError('Too few points near transit')
 
   # Validate bin_width.
   bin_width = bin_width if bin_width is not None else (x_max - x_min) / num_bins
@@ -83,8 +96,10 @@ def median_filter(x, y, num_bins, bin_width=None, x_min=None, x_max=None):
 
   bin_spacing = (x_max - x_min - bin_width) / (num_bins - 1)
 
-  # Bins with no y-values will fall back to the global median.
-  result = np.repeat(np.median(y), num_bins)
+  # # Bins with no y-values will fall back to the global median. - Don't do this for sparse light curves
+  # result = np.repeat(np.median(y), num_bins)
+  result = np.repeat(np.nan, num_bins)
+  # For sparse light curves, fill empty bins with NaN to be interpolated over later.
 
   # Find the first element of x >= x_min. This loop is guaranteed to produce
   # a valid index because we know that x_min <= x[-1].
@@ -117,4 +132,36 @@ def median_filter(x, y, num_bins, bin_width=None, x_min=None, x_max=None):
     bin_min += bin_spacing
     bin_max += bin_spacing
 
+  result = fill_empty_bin(result)
   return result
+
+
+def fill_empty_bin(y):
+  """Fill empty bins by interpolating between adjacent bins.
+
+  :param y: 1D array of y-coordinates with the same size as x. Empty bins should have NaN values.
+  :return: same as y, but with NaNs replaced with interpolated values.
+  """
+
+  i = 0
+  while i < len(y):
+    if np.isnan(y[i]):
+      left = i-1
+      right = i+1
+      # Find nearest non-NaN values on both sides
+      while left >= 0 and np.isnan(y[left]):
+        left -= 1
+      while right < len(y) and np.isnan(y[right]):
+        right += 1
+      if left >= 0 and right < len(y):
+        slope = (y[right] - y[left]) / (right - left)
+        for j in range(left + 1, right):
+          y[j] = y[left] + slope*(j - left)
+      elif left < 0 and right < len(y):
+        y[:right] = y[right]
+      elif left >= 0 and right == len(y):
+        y[left+1:] = y[left]
+      else:
+        raise ValueError('Light curve consists only of invalid values')
+    i += 1
+  return y

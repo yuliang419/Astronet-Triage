@@ -1,4 +1,4 @@
 # Ignore all bazel-* symlinks.
 /bazel-*
-
+*pyc*pyc*pyc*pyc*pyc*pyc*pyc*pyc
 get_kepler.sh
