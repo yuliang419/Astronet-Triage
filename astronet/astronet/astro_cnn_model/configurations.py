@@ -57,16 +57,21 @@ def local_global():
   # Override the model features to be local_view and global_view time series.
   config["inputs"]["features"] = {
       "local_view": {
-          "length": 201,
+          "length": 81,
           "is_time_series": True,
       },
       "global_view": {
-          "length": 2001,
+          "length": 201,
+          "is_time_series": True,
+      },
+      "secondary_view": {
+          "length": 81,
           "is_time_series": True,
       },
   }
 
   # Add configurations for the convolutional layers of time series features.
+  # need fine tuning!
   config["hparams"]["time_series_hidden"] = {
       "local_view": {
           "cnn_num_blocks": 2,
@@ -86,6 +91,16 @@ def local_global():
           "cnn_kernel_size": 5,
           "convolution_padding": "same",
           "pool_size": 5,
+          "pool_strides": 2,
+      },
+      "secondary_view": {
+          "cnn_num_blocks": 2,
+          "cnn_block_size": 2,
+          "cnn_initial_num_filters": 16,
+          "cnn_block_filter_factor": 2,
+          "cnn_kernel_size": 5,
+          "convolution_padding": "same",
+          "pool_size": 7,
           "pool_strides": 2,
       },
   }

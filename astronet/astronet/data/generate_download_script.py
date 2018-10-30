@@ -33,8 +33,8 @@ from __future__ import print_function
 import argparse
 import csv
 import os
-import stat
 import sys
+import pandas as pd
 
 parser = argparse.ArgumentParser()
 
@@ -67,10 +67,14 @@ def main(argv):
 
   # Read Kepler targets.
   kepids = set()
-  with open(FLAGS.kepler_csv_file) as f:
-    reader = csv.DictReader(row for row in f if not row.startswith("#"))
-    for row in reader:
-      kepids.add(row["kepid"])
+  # with open(FLAGS.kepler_csv_file) as f:
+  #   reader = csv.DictReader(row for row in f if not row.startswith("#"))
+  #   for row in reader:
+  #     kepids.add(row["kepid"])
+
+  df=pd.read_csv(FLAGS.kepler_csv_file, comment='#', header=0)
+  for i, row in df.iterrows():
+    kepids.add(row['kepid'])
 
   num_kepids = len(kepids)
 
@@ -91,9 +95,7 @@ def main(argv):
     f.write("echo 'Finished downloading {} Kepler targets to {}'\n".format(
         num_kepids, FLAGS.download_dir))
 
-  # Make the download script executable.
-  os.chmod(FLAGS.output_file, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
-
+  os.chmod(FLAGS.output_file, 0o744)  # Make the download script executable.
   print("{} Kepler targets will be downloaded to {}".format(
       num_kepids, FLAGS.output_file))
   print("To start download, run:\n  {}".format("./" + FLAGS.output_file

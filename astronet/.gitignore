@@ -1,4 +1,5 @@
 # Ignore all bazel-* symlinks.
+*.DS_Store
 /bazel-*
-
+*pyc
 get_kepler.sh

@@ -78,11 +78,7 @@ def split(all_time, all_flux, gap_width=0.75):
   return out_time, out_flux
 
 
-def remove_events(all_time,
-                  all_flux,
-                  events,
-                  width_factor=1.0,
-                  include_empty_segments=True):
+def remove_events(all_time, all_flux, events, width_factor=1.0):
   """Removes events from a light curve.
 
   This function accepts either a single-segment or piecewise-defined light
@@ -95,7 +91,6 @@ def remove_events(all_time,
         flux values of the corresponding time array.
     events: List of Event objects to remove.
     width_factor: Fractional multiplier of the duration of each event to remove.
-    include_empty_segments: Whether to include empty segments in the output.
 
   Returns:
     output_time: Numpy array or list of numpy arrays; the time arrays with
@@ -123,7 +118,7 @@ def remove_events(all_time,
     if single_segment:
       output_time = time[mask]
       output_flux = flux[mask]
-    elif include_empty_segments or np.any(mask):
+    else:
       output_time.append(time[mask])
       output_flux.append(flux[mask])
 

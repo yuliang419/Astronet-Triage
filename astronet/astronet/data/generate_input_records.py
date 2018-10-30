@@ -1,4 +1,3 @@
-# Copyright 2018 The TensorFlow Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -87,6 +86,7 @@ import pandas as pd
 import tensorflow as tf
 
 from astronet.data import preprocess
+from light_curve_util.median_filter import SparseLightCurveError
 
 
 parser = argparse.ArgumentParser()
@@ -126,9 +126,56 @@ parser.add_argument(
     default=5,
     help="Number of subprocesses for processing the TCEs in parallel.")
 
+parser.add_argument(
+    "--start_time",
+    type=float,
+    default=0.,
+    help='Start time of selected segment.')
+
+parser.add_argument(
+    "--end_time",
+    type=float,
+    default=20000,
+    help='End time of selected segment.')
+
+parser.add_argument(
+    "--repeat",
+    type=bool,
+    default=False,
+    help='Include a second portion of high SNR TCE light curves as separate objects?')
+
+parser.add_argument(
+    "--repeat_start_time",
+    type=float,
+    help='Start time of second segment if recycling a second portion of high SNR candidate light curves.')
+
+parser.add_argument(
+    "--repeat_end_time",
+    type=float,
+    help='End time of second segment if recycling a second portion of high SNR candidate light curves.')
+
 # Name and values of the column in the input CSV file to use as training labels.
 _LABEL_COLUMN = "av_training_set"
 _ALLOWED_LABELS = {"PC", "AFP", "NTP"}
+
+
+def _set_float_feature(ex, name, value):
+  """Sets the value of a float feature in a tensorflow.train.Example proto."""
+  assert name not in ex.features.feature, "Duplicate feature: %s" % name
+  ex.features.feature[name].float_list.value.extend([float(v) for v in value])
+
+
+def _set_bytes_feature(ex, name, value):
+  """Sets the value of a bytes feature in a tensorflow.train.Example proto."""
+  assert name not in ex.features.feature, "Duplicate feature: %s" % name
+  ex.features.feature[name].bytes_list.value.extend([
+      str(v).encode("latin-1") for v in value])
+
+
+def _set_int64_feature(ex, name, value):
+  """Sets the value of an int64 feature in a tensorflow.train.Example proto."""
+  assert name not in ex.features.feature, "Duplicate feature: %s" % name
+  ex.features.feature[name].int64_list.value.extend([int(v) for v in value])
 
 
 def _process_tce(tce):
@@ -139,11 +186,91 @@ def _process_tce(tce):
 
   Returns:
     A tensorflow.train.Example proto containing TCE features.
+
+  Raises:
+    IOError: If the light curve files for this Kepler ID cannot be found.
   """
-  all_time, all_flux = preprocess.read_light_curve(tce.kepid,
-                                                   FLAGS.kepler_data_dir)
-  time, flux = preprocess.process_light_curve(all_time, all_flux)
-  return preprocess.generate_example_for_tce(time, flux, tce)
+  # Read and process the light curve.
+
+  if not tce.repeated:
+    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.kepler_data_dir, FLAGS.start_time,
+                                                       FLAGS.end_time)
+  else:
+    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.kepler_data_dir, FLAGS.repeat_start_time,
+                                                           FLAGS.repeat_end_time)
+  time, flux = preprocess.phase_fold_and_sort_light_curve(
+    time, flux, tce.tce_period, tce.tce_time0bk)
+
+  # Generate the local and global views.
+  global_view = preprocess.global_view(time, flux, tce.tce_period)
+  local_view = preprocess.local_view(time, flux, tce.tce_period,
+                                     tce.tce_duration)
+  secondary_view = preprocess.secondary_view(time, flux, tce.tce_period, tce.tce_duration)
+
+  # Make output proto.
+  ex = tf.train.Example()
+
+  # Set time series features.
+  _set_float_feature(ex, "global_view", global_view)
+  _set_float_feature(ex, "local_view", local_view)
+  _set_float_feature(ex, "secondary_view", secondary_view)
+
+  # Set other columns.
+  for col_name, value in tce.items():
+    if np.issubdtype(type(value), np.integer):
+      _set_int64_feature(ex, col_name, [value])
+    else:
+      try:
+        _set_float_feature(ex, col_name, [float(value)])
+      except ValueError:
+        _set_bytes_feature(ex, col_name, [value])
+
+  return ex
+
+
+def _tces_with_transit(segstart, segend, tce_table):
+    """Select TCEs with at least 2 transits in the selected time range and discard the rest.
+
+    :param segstart: float, start time of time range.
+    :param segend: float, end time of time range.
+    :param tce_table: A Pandas DateFrame containing the TCEs in the shard.
+    :return: list of booleans (True = TCE has at least 2 transits in given time range).
+    """
+    has_transit = []
+    for ind, row in tce_table.iterrows():
+        P = row['tce_period']
+        if (row['tce_time0bk'] > segend) or (P > (segend - segstart)):
+            has_transit.append(False)
+            continue
+        num_transits = np.floor((segend - segstart) / P)
+        min_n = np.ceil((segstart - row['tce_time0bk']) / P)
+        midpts = np.arange(min_n, min_n+num_transits) * P + row['tce_time0bk']
+        has_transit.append(sum((midpts > segstart) & (midpts < segend)) > 1)
+    return has_transit
+
+
+def _tces_with_high_mes_transit(segstart, segend, tce_table, threshold=7.1):
+    """Select TCEs with >=2 transits in time range and rescaled MES above some threshold.
+
+    :param segstart: float, start time of time range.
+    :param segend: float, end time of time range.
+    :param tce_table: A Pandas DateFrame containing the TCEs in the shard.
+    :return: list of booleans (True = TCE has at least 2 transits in given time range and MES>=threshold).
+    """
+    has_transit = []
+    for ind, row in tce_table.iterrows():
+        P = row['tce_period']
+        if (row['tce_time0bk'] > segend) or (P > (segend - segstart)):
+            has_transit.append(False)
+            continue
+        num_transits = np.floor((segend - segstart) / P)
+        min_n = np.ceil((segstart - row['tce_time0bk']) / P)
+        midpts = np.arange(min_n, min_n+num_transits) * P + row['tce_time0bk']
+
+        mes = row['tce_max_mult_ev'] * sum((midpts > segstart) & (midpts < segend))**0.5 / float(row[
+            'tce_num_transits'])**0.5
+        has_transit.append((sum((midpts > segstart) & (midpts < segend)) > 1) and (mes >= threshold))
+    return has_transit
 
 
 def _process_file_shard(tce_table, file_name):
@@ -161,8 +288,14 @@ def _process_file_shard(tce_table, file_name):
 
   with tf.python_io.TFRecordWriter(file_name) as writer:
     num_processed = 0
+    num_skipped = 0
     for _, tce in tce_table.iterrows():
-      example = _process_tce(tce)
+        # skip light curves with no points in given time range
+      try:
+        example = _process_tce(tce)
+      except (preprocess.EmptyLightCurveError, SparseLightCurveError):
+        num_skipped += 1
+        continue
       if example is not None:
         writer.write(example.SerializeToString())
 
@@ -171,8 +304,58 @@ def _process_file_shard(tce_table, file_name):
         tf.logging.info("%s: Processed %d/%d items in shard %s", process_name,
                         num_processed, shard_size, shard_name)
 
-  tf.logging.info("%s: Wrote %d items in shard %s", process_name, shard_size,
-                  shard_name)
+  tf.logging.info("%s: Wrote %d/%d items in shard %s. %d skipped.", process_name, num_processed, shard_size,
+                  shard_name, num_skipped)
+
+
+def create_input_list(repeat_threshold=20):
+    """Generate pandas dataframe of TCEs to be made into file shards.
+
+    :param repeat_threshold: float. If reusing a second segment of high quality TCEs, TCEs must have a MES higher
+    than this threshold to be reused.
+    :return: pandas dataframe containing TCEs that have at least 2 transits in given time ranges.
+    """
+    if FLAGS.repeat and (FLAGS.repeat_start_time is None or FLAGS.repeat_end_time is None):
+        raise ValueError('Must specify start and end times of second segment if using another portion of high SNR \
+                         candidate light curves')
+
+    # Read CSV file of Kepler KOIs.
+    tce_table = pd.read_csv(FLAGS.input_tce_csv_file, index_col="rowid", comment="#")
+    tce_table["tce_duration"] /= 24  # Convert hours to days.
+    tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
+
+    # Filter TCE table to allowed labels.
+    allowed_tces = tce_table[_LABEL_COLUMN].apply(lambda l: l in _ALLOWED_LABELS)
+    tce_table = tce_table[allowed_tces]
+    tce_table = tce_table[tce_table['tce_num_transits'] > 0]
+    num_tces = len(tce_table)
+    tf.logging.info("Filtered to %d TCEs with labels in %s.", num_tces,
+                    list(_ALLOWED_LABELS))
+    tce_table['repeated'] = False
+
+    if FLAGS.repeat:
+        recyclable = tce_table
+        has_transit = _tces_with_high_mes_transit(FLAGS.repeat_start_time, FLAGS.repeat_end_time, recyclable)
+        recyclable = recyclable[has_transit]
+        recyclable.loc[:, 'repeated'] = True
+        # Modify planet number to distinguish reused TCEs
+        recyclable.loc[:, 'tce_plnt_num'] = recyclable['tce_plnt_num']*10
+        num_repeated = len(recyclable)
+        tf.logging.info("%d reusable TCEs with >=2 transits in time range %s - %s.", num_repeated,
+                        FLAGS.repeat_start_time, FLAGS.repeat_end_time)
+
+    # Filter TCE table to those with transits in selected time range
+    has_transit = _tces_with_high_mes_transit(FLAGS.start_time, FLAGS.end_time, tce_table)
+    tce_table = tce_table[has_transit]
+    num_tces = len(tce_table)
+    tf.logging.info("Filtered to %d TCEs with >=2 transits in time range %s - %s.", num_tces,
+                    FLAGS.start_time, FLAGS.end_time)
+
+    if FLAGS.repeat:
+        tce_table = pd.concat([tce_table, recyclable], ignore_index=True)
+        num_tces = len(tce_table)
+        tf.logging.info("%d total TCEs", num_tces)
+    return tce_table
 
 
 def main(argv):
@@ -181,18 +364,28 @@ def main(argv):
   # Make the output directory if it doesn't already exist.
   tf.gfile.MakeDirs(FLAGS.output_dir)
 
-  # Read CSV file of Kepler KOIs.
-  tce_table = pd.read_csv(
-      FLAGS.input_tce_csv_file, index_col="rowid", comment="#")
-  tce_table["tce_duration"] /= 24  # Convert hours to days.
-  tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
+  # # Read CSV file of Kepler KOIs.
+  # tce_table = pd.read_csv(
+  #     FLAGS.input_tce_csv_file, index_col="rowid", comment="#")
+  # tce_table["tce_duration"] /= 24  # Convert hours to days.
+  # tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
+  #
+  # # Filter TCE table to allowed labels.
+  # allowed_tces = tce_table[_LABEL_COLUMN].apply(lambda l: l in _ALLOWED_LABELS)
+  # tce_table = tce_table[allowed_tces]
+  # num_tces = len(tce_table)
+  # tf.logging.info("Filtered to %d TCEs with labels in %s.", num_tces,
+  #                 list(_ALLOWED_LABELS))
+  #
+  # # Filter TCE table to those with transits in selected time range
+  # has_transit = _tces_with_transit(FLAGS.start_time, FLAGS.end_time, tce_table)
+  # tce_table = tce_table[has_transit]
+  # num_tces = len(tce_table)
+  # tf.logging.info("Filtered to %d TCEs with >=2 transits in time range %s - %s.", num_tces,
+  #                 FLAGS.start_time, FLAGS.end_time)
 
-  # Filter TCE table to allowed labels.
-  allowed_tces = tce_table[_LABEL_COLUMN].apply(lambda l: l in _ALLOWED_LABELS)
-  tce_table = tce_table[allowed_tces]
+  tce_table = create_input_list()
   num_tces = len(tce_table)
-  tf.logging.info("Filtered to %d TCEs with labels in %s.", num_tces,
-                  list(_ALLOWED_LABELS))
 
   # Randomly shuffle the TCE table.
   np.random.seed(123)
@@ -203,6 +396,8 @@ def main(argv):
   #   train_tces = 80% of TCEs
   #   val_tces = 10% of TCEs (for validation during training)
   #   test_tces = 10% of TCEs (for final evaluation)
+
+  # Problem: can't exclude objects with no data in given time range before partitioning
   train_cutoff = int(0.80 * num_tces)
   val_cutoff = int(0.90 * num_tces)
   train_tces = tce_table[0:train_cutoff]

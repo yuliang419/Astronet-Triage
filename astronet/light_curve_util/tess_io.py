@@ -136,3 +136,5 @@ def star_query(tic):
 
     return starparam
 
+def bls_params(tic,sector=1, cam=4, ccd=1,base_dir='/pdo/qlp-data/'):
+    bls_dir = os.path.join(base_dir, 'sector-' + str(sector), 'ffi', 'cam' + str(cam), 'ccd' + str(ccd), 'BLS')
