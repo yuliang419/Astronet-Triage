@@ -23,6 +23,7 @@ import h5py
 import numpy as np
 import tsig
 from qlp.util.gaia import GaiaCatalog
+import pandas as pd
 
 from tensorflow import gfile
 
@@ -87,11 +88,11 @@ def read_tess_light_curve(filename, flux_key='KSPMagnitude', invert=False):
 
     time = np.array(f["LightCurve"]["BJD"])
     flux = np.array(api[flux_key])
-    quality_flag = np.array(api["QualityFlag"]).astype(int)
+    quality_flag = np.where(np.array(api["QualityFlag"]) == 'G')
 
     # Remove outliers
-    time = time[quality_flag == 0]
-    flux = flux[quality_flag == 0]
+    time = time[quality_flag]
+    flux = flux[quality_flag]
 
     # Remove NaN flux values.
     valid_indices = np.where(np.isfinite(flux))
@@ -105,6 +106,12 @@ def read_tess_light_curve(filename, flux_key='KSPMagnitude', invert=False):
 
 
 def star_query(tic):
+    """
+
+    :param tic:  TIC of the target star. May be an int or a possibly zero-
+          padded string.
+    :return: dict containing stellar parameters.
+    """
     catalog = tsig.catalog.TIC()
     field_list = ["id", "ra", "dec", "mass", "rad", "e_rad", "teff", "e_teff", "logg", "e_logg", "tmag", "e_tmag"]
     result, _ = catalog.query_by_id(tic, ",".join(field_list))
@@ -136,5 +143,23 @@ def star_query(tic):
 
     return starparam
 
-def bls_params(tic,sector=1, cam=4, ccd=1,base_dir='/pdo/qlp-data/'):
-    bls_dir = os.path.join(base_dir, 'sector-' + str(sector), 'ffi', 'cam' + str(cam), 'ccd' + str(ccd), 'BLS')
+
+def bls_params(tic, sector=1, cam=4, ccd=1,base_dir='/pdo/qlp-data/'):
+    """
+
+    :param tic: TIC of the target star. May be an int or a possibly zero-
+          padded string.
+    :param sector: Int, sector number of data.
+    :param cam: Int, camera number of data.
+    :param ccd: Int, CCD number of data.
+    :param base_dir: Base directory containing BLS files.
+    :return: dataframe containing BLS information on significant peaks.
+    """
+    filename = os.path.join(base_dir, 'sector-' + str(sector), 'ffi', 'cam' + str(cam), 'ccd' + str(ccd), 'BLS',
+                            tic+'.blsanal')
+    df = pd.read_table(filename, delimiter=' ', header=0, escapechar='#', dtype=float)
+    peaks = df[(df['BLS_SignaltoPinknoise_1_0'] > 9) & (df['BLS_Qtran_1_0'] <= 0.2) & (
+                df['BLS_Qingress_1_0'] < 0.5) & (df['BLS_SN_1_0'] > 7) & (df['BLS_Depth_1_0'] < 0.1) & (
+                           df['BLS_fraconenight_1_0'] < 0.8)]
+    return peaks
+

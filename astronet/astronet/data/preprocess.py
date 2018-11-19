@@ -21,7 +21,7 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
-from light_curve_util import kepler_io
+from light_curve_util import tess_io
 from light_curve_util import median_filter
 from light_curve_util import util
 from third_party.kepler_spline import kepler_spline
@@ -33,73 +33,35 @@ class EmptyLightCurveError(Exception):
     pass
 
 
-def read_and_process_light_curve(kepid, kepler_data_dir, start_time, end_time, max_gap_width=0.75):
-  """Reads a light curve, fits a B-spline and divides the curve by the spline.
+def read_and_process_light_curve(tic, tess_data_dir, sector=1, cam=4, ccd=1, injected=False, inject_dir='/pdo/users/yuliang'):
+  """Reads an already detrended light curve.
 
   Args:
-    kepid: Kepler id of the target star.
-    kepler_data_dir: Base directory containing Kepler data. See
-        kepler_io.kepler_filenames().
-    max_gap_width: Gap size (in days) above which the light curve is split for
-        the fitting of B-splines.
+    tic: TIC id of the target star.
+    tess_data_dir: Base directory containing TESS data. See
+        tess_io.tess_filenames().
 
   Returns:
     time: 1D NumPy array; the time values of the light curve.
     flux: 1D NumPy array; the normalized flux values of the light curve.
 
   Raises:
-    IOError: If the light curve files for this Kepler ID cannot be found.
-    ValueError: If the spline could not be fit.
+    IOError: If the light curve files for this TIC ID cannot be found.
     EmptyLightCurveError: If light curve has no points in given time range.
   """
-  # Read the Kepler light curve.
-  file_names = kepler_io.kepler_filenames(kepler_data_dir, kepid)
+  # Read the TESS light curve.
+  file_names = tess_io.tess_filenames(tic, tess_data_dir, sector=sector, cam=cam, ccd=ccd, injected=injected, inject_dir=inject_dir)
   if not file_names:
-    raise IOError("Failed to find .fits files in %s for Kepler ID %s" %
-                  (kepler_data_dir, kepid))
+    raise IOError("Failed to find light curve files in %s for TIC ID %s" %
+                  (tess_data_dir, tic))
 
-  all_time, all_flux = kepler_io.read_kepler_light_curve(file_names)
+  all_time, all_flux = tess_io.read_tess_light_curve(file_names)
 
-  # Split on gaps. GP does not require this step
-  all_time, all_flux = util.split(all_time, all_flux, gap_width=max_gap_width)
-
-  # Extra step to cut down light curve into shorter segment
-  all_time, all_flux = chop_light_curve(all_time, all_flux, start_time, end_time)
   if len(all_time) < 1:
-      tf.logging.info("No points in selected time range %s-%s. Skipped kepid %s" % (start_time, end_time, kepid))
+      tf.logging.info("Empty light curve. Skipped TIC id %s" % (tic))
       raise EmptyLightCurveError
 
-  # Logarithmically sample candidate break point spacings between 0.5 and 20
-  # days.
-  bkspaces = np.logspace(np.log10(0.5), np.log10(20), num=20)
-
-  # Generate spline.
-  spline = kepler_spline.choose_kepler_spline(
-      all_time, all_flux, bkspaces, penalty_coeff=1.0, verbose=False)[0]
-  if spline is None:
-    raise ValueError("Failed to fit spline with Kepler ID %s", kepid)
-
-  # Concatenate the piecewise light curve and spline.
-  time = np.concatenate(all_time)
-  flux = np.concatenate(all_flux)
-  spline = np.concatenate(spline)
-
-  # In rare cases the piecewise spline contains NaNs in places the spline could
-  # not be fit. We can't normalize those points if the spline isn't defined
-  # there. Instead we just remove them.
-  # Also remove any points with NaN flux
-  finite_i = np.isfinite(spline)
-  if not np.all(finite_i):
-    tf.logging.warn("Incomplete spline with Kepler ID %s", kepid)
-    time = time[finite_i]
-    flux = flux[finite_i]
-    spline = spline[finite_i]
-
-  # "Flatten" the light curve (remove low-frequency variability) by dividing by
-  # the spline.
-  flux /= spline
-
-  return time, flux
+  return all_time, all_flux
 
 
 def spline_detrend(kepid, time, flux):
@@ -172,40 +134,6 @@ def phase_fold_and_sort_light_curve(time, flux, period, t0):
   flux = flux[sorted_i]
 
   return time, flux
-
-
-def chop_light_curve(time, flux, segstart, segend):
-    """Chop light curve into shorter segments.
-
-    :param time: Numpy array or sequence of numpy arrays; each is a sequence of
-        time values.
-    :param flux: Numpy array or sequence of numpy arrays; each is a sequence of
-        flux values of the corresponding time array.
-    :param segstart: start time of segment
-    :param segend: end time of segment
-    :return:
-    time: list of 1D NumPy arrays of time for selected time range.
-    flux: list of 1D NumPy arrays of flux for selected time range.
-    """
-    if segend <= segstart:
-        raise ValueError("End time must be later than start time")
-
-    time_out = []
-    flux_out = []
-
-    for timeseg, fluxseg in zip(time, flux):
-        if (min(timeseg) > segend) or (max(timeseg) < segstart):
-            continue
-        else:
-            start = 0
-            while timeseg[start] < segstart:
-                start += 1
-            end = start+1
-            while (timeseg[end] < segend) and (end < len(timeseg)-1):
-                end += 1
-            time_out.append(timeseg[start:end])
-            flux_out.append(fluxseg[start:end])
-    return time_out, flux_out
 
 
 def generate_view(time, flux, num_bins, bin_width, t_min, t_max,
