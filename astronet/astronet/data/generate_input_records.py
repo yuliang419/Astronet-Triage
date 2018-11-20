@@ -94,19 +94,26 @@ parser = argparse.ArgumentParser()
 _DR24_TCE_URL = ("https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/"
                  "nph-tblView?app=ExoTbls&config=q1_q17_dr24_tce")
 
-parser.add_argument(
-    "--input_tce_csv_file",
-    type=str,
-    required=True,
-    help="CSV file containing the Q1-Q17 DR24 Kepler TCE table. Must contain "
-    "columns: rowid, kepid, tce_plnt_num, tce_period, tce_duration, "
-    "tce_time0bk. Download from: %s" % _DR24_TCE_URL)
+# parser.add_argument(
+#     "--input_tce_csv_file",
+#     type=str,
+#     required=True,
+#     help="CSV file containing the Q1-Q17 DR24 Kepler TCE table. Must contain "
+#     "columns: rowid, kepid, tce_plnt_num, tce_period, tce_duration, "
+#     "tce_time0bk. Download from: %s" % _DR24_TCE_URL)
 
 parser.add_argument(
-    "--kepler_data_dir",
+    '--input_tce_csv_file',
+    nargs='+',
+    help='CSV file(s) containing the TCE table(s) for training. Must contain '
+         'columns: TIC, TCE planet number, final disposition',
+    required=True)
+
+parser.add_argument(
+    "--tess_data_dir",
     type=str,
     required=True,
-    help="Base folder containing Kepler data.")
+    help="Base folder containing TESS data.")
 
 parser.add_argument(
     "--output_dir",
@@ -126,33 +133,6 @@ parser.add_argument(
     default=5,
     help="Number of subprocesses for processing the TCEs in parallel.")
 
-parser.add_argument(
-    "--start_time",
-    type=float,
-    default=0.,
-    help='Start time of selected segment.')
-
-parser.add_argument(
-    "--end_time",
-    type=float,
-    default=20000,
-    help='End time of selected segment.')
-
-parser.add_argument(
-    "--repeat",
-    type=bool,
-    default=False,
-    help='Include a second portion of high SNR TCE light curves as separate objects?')
-
-parser.add_argument(
-    "--repeat_start_time",
-    type=float,
-    help='Start time of second segment if recycling a second portion of high SNR candidate light curves.')
-
-parser.add_argument(
-    "--repeat_end_time",
-    type=float,
-    help='End time of second segment if recycling a second portion of high SNR candidate light curves.')
 
 # Name and values of the column in the input CSV file to use as training labels.
 _LABEL_COLUMN = "av_training_set"
@@ -308,16 +288,12 @@ def _process_file_shard(tce_table, file_name):
                   shard_name, num_skipped)
 
 
-def create_input_list(repeat_threshold=20):
+def create_input_list():
     """Generate pandas dataframe of TCEs to be made into file shards.
 
-    :param repeat_threshold: float. If reusing a second segment of high quality TCEs, TCEs must have a MES higher
-    than this threshold to be reused.
+    :param
     :return: pandas dataframe containing TCEs that have at least 2 transits in given time ranges.
     """
-    if FLAGS.repeat and (FLAGS.repeat_start_time is None or FLAGS.repeat_end_time is None):
-        raise ValueError('Must specify start and end times of second segment if using another portion of high SNR \
-                         candidate light curves')
 
     # Read CSV file of Kepler KOIs.
     tce_table = pd.read_csv(FLAGS.input_tce_csv_file, index_col="rowid", comment="#")
@@ -351,10 +327,6 @@ def create_input_list(repeat_threshold=20):
     tf.logging.info("Filtered to %d TCEs with >=2 transits in time range %s - %s.", num_tces,
                     FLAGS.start_time, FLAGS.end_time)
 
-    if FLAGS.repeat:
-        tce_table = pd.concat([tce_table, recyclable], ignore_index=True)
-        num_tces = len(tce_table)
-        tf.logging.info("%d total TCEs", num_tces)
     return tce_table
 
 

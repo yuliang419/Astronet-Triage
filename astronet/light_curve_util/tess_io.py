@@ -21,7 +21,8 @@ from __future__ import print_function
 import os.path
 import h5py
 import numpy as np
-import tsig
+# import tsig
+# from tsig import catalog
 from qlp.util.gaia import GaiaCatalog
 import pandas as pd
 
@@ -105,14 +106,17 @@ def read_tess_light_curve(filename, flux_key='KSPMagnitude', invert=False):
     return time, flux
 
 
-def star_query(tic):
+def star_query(tic, catalog, gaia_catalog):
     """
 
     :param tic:  TIC of the target star. May be an int or a possibly zero-
           padded string.
+          catalog: tsig.catalog.TIC() object
+          gaia_catalog: GaiaCatalog() object
+
     :return: dict containing stellar parameters.
     """
-    catalog = tsig.catalog.TIC()
+
     field_list = ["id", "ra", "dec", "mass", "rad", "e_rad", "teff", "e_teff", "logg", "e_logg", "tmag", "e_tmag"]
     result, _ = catalog.query_by_id(tic, ",".join(field_list))
 
@@ -131,8 +135,7 @@ def star_query(tic):
     starparam["logg"] = np.array(t[:]["logg"])[0]
     starparam["e_logg"] = np.array(t[:]["e_logg"])[0]
 
-    gaia = GaiaCatalog()
-    result = gaia.query_by_loc(starparam["ra"], starparam["dec"], 0.02, starparam["tmag"])
+    result = gaia_catalog.query_by_loc(starparam["ra"], starparam["dec"], 0.02, starparam["tmag"])
     if result is not None:
         starparam["rad"] = float(result["radius_val"])
         starparam["e_rad"] = np.sqrt(
