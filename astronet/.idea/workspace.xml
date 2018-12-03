@@ -63,8 +63,8 @@
       <file leaf-file-name="make_catalog.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/astronet/data/make_catalog.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="680">
-              <caret line="58" column="58" lean-forward="true" selection-start-line="58" selection-start-column="58" selection-end-line="58" selection-end-column="58" />
+            <state relative-caret-position="740">
+              <caret line="62" column="56" lean-forward="true" selection-start-line="62" selection-start-column="56" selection-end-line="62" selection-end-column="56" />
               <folding>
                 <element signature="e#710#728#0" expanded="true" />
               </folding>
@@ -412,8 +412,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/astronet/data/make_catalog.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="680">
-          <caret line="58" column="58" lean-forward="true" selection-start-line="58" selection-start-column="58" selection-end-line="58" selection-end-column="58" />
+        <state relative-caret-position="740">
+          <caret line="62" column="56" lean-forward="true" selection-start-line="62" selection-start-column="56" selection-end-line="62" selection-end-column="56" />
           <folding>
             <element signature="e#710#728#0" expanded="true" />
           </folding>
