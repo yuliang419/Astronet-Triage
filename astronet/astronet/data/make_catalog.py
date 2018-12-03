@@ -94,7 +94,7 @@ def _process_tce(tce_table):
 
     total = len(tce_table)
     index = 0
-    for tce in tce_table.iterrow():
+    for tce in tce_table.iterrows():
         index += 1
         if index % 10 == 0:
             print 'Processed %s/%s TCEs' % (index, total)
