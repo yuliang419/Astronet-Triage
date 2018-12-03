@@ -97,6 +97,7 @@ def _process_tce(tce_table):
     model = LevineModel
 
     total = len(tce_table)
+    # full_table = tce_table.copy()
 
     for index, tce in tce_table.iterrows():
         if index % 10 == 0:
@@ -108,17 +109,16 @@ def _process_tce(tce_table):
             x, y, ccd_n = model.celestial_to_pixel(
                 tce['RA'], tce['Dec'], sc_ra, sc_dec, sc_roll,
                 sc.get_cam_geometry(cam_id),
-                sc.get_ccd_geometries(cam_id),
-                spp)
+                sc.get_ccd_geometries(cam_id), spp)
             if ccd_n[0]:
-                tce_table.iloc[index]['camera'] = cam_id
-                tce_table.iloc[index]['ccd'] = ccd_n[0]
+                tce_table.loc[index]['camera'] = cam_id
+                tce_table.loc[index]['ccd'] = ccd_n[0]
 
         starparam = star_query(tce['tic_id'], tce['RA'], tce['Dec'])
-        tce_table.iloc[index]['star_rad'] = starparam['rad']
-        tce_table.iloc[index]['star_mass'] = starparam['mass']
-        tce_table.iloc[index]['teff'] = starparam['teff']
-        tce_table.iloc[index]['logg'] = starparam['logg']
+        tce_table.loc[index]['star_rad'] = starparam['rad']
+        tce_table.loc[index]['star_mass'] = starparam['mass']
+        tce_table.loc[index]['teff'] = starparam['teff']
+        tce_table.loc[index]['logg'] = starparam['logg']
 
     return tce_table
 
