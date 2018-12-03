@@ -59,7 +59,7 @@ def star_query(tic, ra, dec):
             starparam["rad"] = float(result["radius_val"])
             starparam["e_rad"] = np.sqrt(
                 float(result["radius_percentile_lower"]) * float(result["radius_percentile_upper"]))
-        if not np.isnan(float(result["tess_val"])):
+        if not np.isnan(float(result["teff_val"])):
             starparam["teff"] = float(result["teff_val"])
             starparam["e_teff"] = np.sqrt(
                 float(result["teff_percentile_lower"]) * float(result["teff_percentile_upper"]))
