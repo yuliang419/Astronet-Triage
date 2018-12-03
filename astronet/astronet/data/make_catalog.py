@@ -97,7 +97,12 @@ def _process_tce(tce_table):
     model = LevineModel
 
     total = len(tce_table)
-    # full_table = tce_table.copy()
+    tce_table['camera'] = np.nan
+    tce_table['ccd'] = np.nan
+    tce_table['star_rad'] = np.nan
+    tce_table['star_mass'] = np.nan
+    tce_table['teff'] = np.nan
+    tce_table['logg'] = np.nan
 
     for index, tce in tce_table.iterrows():
         if index % 10 == 0:
@@ -111,14 +116,14 @@ def _process_tce(tce_table):
                 sc.get_cam_geometry(cam_id),
                 sc.get_ccd_geometries(cam_id), spp)
             if ccd_n[0]:
-                tce_table.loc[index]['camera'] = cam_id
-                tce_table.loc[index]['ccd'] = ccd_n[0]
+                tce_table.camera.iloc[index] = cam_id
+                tce_table.ccd.iloc[index] = ccd_n[0]
 
         starparam = star_query(tce['tic_id'], tce['RA'], tce['Dec'])
-        tce_table.loc[index]['star_rad'] = starparam['rad']
-        tce_table.loc[index]['star_mass'] = starparam['mass']
-        tce_table.loc[index]['teff'] = starparam['teff']
-        tce_table.loc[index]['logg'] = starparam['logg']
+        tce_table.star_rad.iloc[index] = starparam['rad']
+        tce_table.star_mass.iloc[index] = starparam['mass']
+        tce_table.teff.iloc[index] = starparam['teff']
+        tce_table.logg.iloc[index] = starparam['logg']
 
     return tce_table
 
