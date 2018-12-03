@@ -120,10 +120,12 @@ def _process_tce(tce_table):
 
 
 if __name__ == '__main__':
+    print 'Reading TIC'
     tsig_catalog = catalog.TIC()
+    print 'Reading Gaia catalog'
     gaia_catalog = GaiaCatalog()
 
-    tce_table_names = ['sector-1-earlylook.csv', 'sector-2-bright.csv']
+    tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv']
 
     tce_table = pd.DataFrame()
     for table in tce_table_names:

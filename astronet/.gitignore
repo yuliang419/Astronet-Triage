@@ -6,3 +6,4 @@ get_kepler.sh
 .idea/*
 astronet/kepler
 *cfg
+*.xml
