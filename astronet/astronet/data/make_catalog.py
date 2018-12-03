@@ -26,11 +26,13 @@ from tsig.spacecraft.geometry import LevineModel
 from tsig.mission import MissionProfile
 
 
-def star_query(tic):
+def star_query(tic, ra, dec):
     """
 
     :param tic:  TIC of the target star. May be an int or a possibly zero-
           padded string.
+    :param ra: RA of target star. Float.
+    :param dec: Dec of target star. Float.
 
     :return: dict containing stellar parameters.
     """
@@ -49,7 +51,7 @@ def star_query(tic):
     starparam["logg"] = np.array(t[:]["logg"])[0]
     starparam["e_logg"] = np.array(t[:]["e_logg"])[0]
 
-    result = gaia_catalog.query_by_loc(starparam["ra"], starparam["dec"], 0.02, starparam["tmag"])
+    result = gaia_catalog.query_by_loc(ra, dec, 0.02, starparam["tmag"])
     if result is not None:
         starparam["rad"] = float(result["radius_val"])
         starparam["e_rad"] = np.sqrt(
@@ -109,7 +111,7 @@ def _process_tce(tce_table):
                 tce['camera'] = cam_id
                 tce['ccd'] = ccd_n[0]
 
-        starparam = star_query(tce['tic_id'])
+        starparam = star_query(tce['tic_id'], tce['RA'], tce['Dec'])
         tce['star_rad'] = starparam['rad']
         tce['star_mass'] = starparam['mass']
         tce['teff'] = starparam['teff']
