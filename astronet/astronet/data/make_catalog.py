@@ -37,7 +37,7 @@ def star_query(tic, ra, dec):
     :return: dict containing stellar parameters.
     """
 
-    field_list = ["id", "ra", "dec", "mass", "rad", "e_rad", "teff", "e_teff", "logg", "e_logg", "tmag", "e_tmag"]
+    field_list = ["id", "mass", "rad", "e_rad", "teff", "e_teff", "logg", "e_logg", "tmag", "e_tmag"]
     result, _ = tsig_catalog.query_by_id(tic, ",".join(field_list))
 
     dtype = [(field_list[k], float) for k in xrange(len(field_list))]
@@ -50,6 +50,8 @@ def star_query(tic, ra, dec):
     starparam["e_teff"] = np.array(t[:]["e_teff"])[0]
     starparam["logg"] = np.array(t[:]["logg"])[0]
     starparam["e_logg"] = np.array(t[:]["e_logg"])[0]
+    starparam["tmag"] = np.array(t[:]["tmag"])[0]
+    starparam["e_tmag"] = np.array(t[:]["e_tmag"])[0]
 
     result = gaia_catalog.query_by_loc(ra, dec, 0.02, starparam["tmag"])
     if result is not None:
