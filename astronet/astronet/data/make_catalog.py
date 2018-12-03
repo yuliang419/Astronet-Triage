@@ -55,12 +55,14 @@ def star_query(tic, ra, dec):
 
     result = gaia_catalog.query_by_loc(ra, dec, 0.02, starparam["tmag"])
     if result is not None:
-        starparam["rad"] = float(result["radius_val"])
-        starparam["e_rad"] = np.sqrt(
-            float(result["radius_percentile_lower"]) * float(result["radius_percentile_upper"]))
-        starparam["teff"] = float(result["teff_val"])
-        starparam["e_teff"] = np.sqrt(
-            float(result["teff_percentile_lower"]) * float(result["teff_percentile_upper"]))
+        if not np.isnan(result["radius_val"]):
+            starparam["rad"] = float(result["radius_val"])
+            starparam["e_rad"] = np.sqrt(
+                float(result["radius_percentile_lower"]) * float(result["radius_percentile_upper"]))
+        if not np.isnan(result["tess_val"]):
+            starparam["teff"] = float(result["teff_val"])
+            starparam["e_teff"] = np.sqrt(
+                float(result["teff_percentile_lower"]) * float(result["teff_percentile_upper"]))
 
     return starparam
 
