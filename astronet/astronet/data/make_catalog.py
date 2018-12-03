@@ -83,7 +83,7 @@ def bls_params(tic, sector, cam, ccd,base_dir='/pdo/qlp-data/'):
 
 def _process_tce(tce_table):
     """
-    Find camera and ccd number of target given TIC and sector, using catalogs under /scratch/tmp
+    Find camera, ccd number and stellar params of target given TIC and sector, using catalogs under /scratch/tmp
     :param tce_table: Pandas dataframe containing TIC ID, RA and Dec
     :param sector: Int, sector number of data
     :return: tce with stellar params, camera and ccd columns filled
@@ -93,9 +93,8 @@ def _process_tce(tce_table):
     model = LevineModel
 
     total = len(tce_table)
-    index = 0
-    for tce in tce_table.iterrows():
-        index += 1
+
+    for index, tce in tce_table.iterrows():
         if index % 10 == 0:
             print 'Processed %s/%s TCEs' % (index, total)
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
