@@ -101,6 +101,7 @@ def _process_tce(tce_table):
     for index, tce in tce_table.iterrows():
         if index % 10 == 0:
             print 'Processed %s/%s TCEs' % (index, total)
+
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
         for cam_id in xrange(1, 5):
@@ -110,14 +111,14 @@ def _process_tce(tce_table):
                 sc.get_ccd_geometries(cam_id),
                 spp)
             if ccd_n[0]:
-                tce['camera'] = cam_id
-                tce['ccd'] = ccd_n[0]
+                tce_table.iloc[index]['camera'] = cam_id
+                tce_table.iloc[index]['ccd'] = ccd_n[0]
 
         starparam = star_query(tce['tic_id'], tce['RA'], tce['Dec'])
-        tce['star_rad'] = starparam['rad']
-        tce['star_mass'] = starparam['mass']
-        tce['teff'] = starparam['teff']
-        tce['logg'] = starparam['logg']
+        tce_table.iloc[index]['star_rad'] = starparam['rad']
+        tce_table.iloc[index]['star_mass'] = starparam['mass']
+        tce_table.iloc[index]['teff'] = starparam['teff']
+        tce_table.iloc[index]['logg'] = starparam['logg']
 
     return tce_table
 
@@ -133,7 +134,7 @@ if __name__ == '__main__':
     tce_table = pd.DataFrame()
     for table in tce_table_names:
         tces = pd.read_csv(table, header=0, usecols=[1,2,3,4,5,6,8,10,12,14,16])
-        tce_table = pd.concat([tce_table, tces])
+        tce_table = pd.concat([tce_table, tces], ignore_index=True)
 
     tce_table = _process_tce(tce_table)
     tce_table.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/tces.csv')
