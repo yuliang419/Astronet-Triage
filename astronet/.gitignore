@@ -3,3 +3,5 @@
 /bazel-*
 *pyc
 get_kepler.sh
+.idea/*
+astronet/kepler

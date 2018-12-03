@@ -292,11 +292,17 @@ def create_input_list():
     """Generate pandas dataframe of TCEs to be made into file shards.
 
     :param
-    :return: pandas dataframe containing TCEs that have at least 2 transits in given time ranges.
+    :return: pandas dataframe containing TCEs. Required columns: TIC, TCE planet number, final disposition
     """
 
     # Read CSV file of Kepler KOIs.
-    tce_table = pd.read_csv(FLAGS.input_tce_csv_file, index_col="rowid", comment="#")
+    if type(FLAGS.input_tce_csv_file) == list:
+        tce_table = pd.DataFrame()
+        for input_file in FLAGS.input_tce_csv_file:
+            table = pd.read_csv(input_file, header=0, usecols=[0,1,2])
+            tce_table = pd.concat([tce_table, table])
+    else:
+        tce_table = pd.read_csv(FLAGS.input_tce_csv_file, header=0, usecols=[0, 1, 2])
     tce_table["tce_duration"] /= 24  # Convert hours to days.
     tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
 
@@ -307,18 +313,6 @@ def create_input_list():
     num_tces = len(tce_table)
     tf.logging.info("Filtered to %d TCEs with labels in %s.", num_tces,
                     list(_ALLOWED_LABELS))
-    tce_table['repeated'] = False
-
-    if FLAGS.repeat:
-        recyclable = tce_table
-        has_transit = _tces_with_high_mes_transit(FLAGS.repeat_start_time, FLAGS.repeat_end_time, recyclable)
-        recyclable = recyclable[has_transit]
-        recyclable.loc[:, 'repeated'] = True
-        # Modify planet number to distinguish reused TCEs
-        recyclable.loc[:, 'tce_plnt_num'] = recyclable['tce_plnt_num']*10
-        num_repeated = len(recyclable)
-        tf.logging.info("%d reusable TCEs with >=2 transits in time range %s - %s.", num_repeated,
-                        FLAGS.repeat_start_time, FLAGS.repeat_end_time)
 
     # Filter TCE table to those with transits in selected time range
     has_transit = _tces_with_high_mes_transit(FLAGS.start_time, FLAGS.end_time, tce_table)

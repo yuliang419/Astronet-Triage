@@ -21,10 +21,6 @@ from __future__ import print_function
 import os.path
 import h5py
 import numpy as np
-# import tsig
-# from tsig import catalog
-from qlp.util.gaia import GaiaCatalog
-import pandas as pd
 
 from tensorflow import gfile
 
@@ -105,64 +101,4 @@ def read_tess_light_curve(filename, flux_key='KSPMagnitude', invert=False):
 
     return time, flux
 
-
-def star_query(tic, catalog, gaia_catalog):
-    """
-
-    :param tic:  TIC of the target star. May be an int or a possibly zero-
-          padded string.
-          catalog: tsig.catalog.TIC() object
-          gaia_catalog: GaiaCatalog() object
-
-    :return: dict containing stellar parameters.
-    """
-
-    field_list = ["id", "ra", "dec", "mass", "rad", "e_rad", "teff", "e_teff", "logg", "e_logg", "tmag", "e_tmag"]
-    result, _ = catalog.query_by_id(tic, ",".join(field_list))
-
-    dtype = [(field_list[k], float) for k in xrange(len(field_list))]
-    t = np.array(result, dtype=dtype)
-    starparam = {}
-    starparam["tmag"] = np.array(t[:]["tmag"])[0]
-    starparam["e_tmag"] = np.array(t[:]["e_tmag"])[0]
-    starparam["ra"] = np.array(t[:]["ra"])[0]
-    starparam["dec"] = np.array(t[:]["dec"])[0]
-    starparam["mass"] = np.array(t[:]["mass"])[0]
-    starparam["rad"] = np.array(t[:]["rad"])[0]
-    starparam["e_rad"] = np.array(t[:]["e_rad"])[0]
-    starparam["teff"] = np.array(t[:]["teff"])[0]
-    starparam["e_teff"] = np.array(t[:]["e_teff"])[0]
-    starparam["logg"] = np.array(t[:]["logg"])[0]
-    starparam["e_logg"] = np.array(t[:]["e_logg"])[0]
-
-    result = gaia_catalog.query_by_loc(starparam["ra"], starparam["dec"], 0.02, starparam["tmag"])
-    if result is not None:
-        starparam["rad"] = float(result["radius_val"])
-        starparam["e_rad"] = np.sqrt(
-            float(result["radius_percentile_lower"]) * float(result["radius_percentile_upper"]))
-        starparam["teff"] = float(result["teff_val"])
-        starparam["e_teff"] = np.sqrt(
-            float(result["teff_percentile_lower"]) * float(result["teff_percentile_upper"]))
-
-    return starparam
-
-
-def bls_params(tic, sector=1, cam=4, ccd=1,base_dir='/pdo/qlp-data/'):
-    """
-
-    :param tic: TIC of the target star. May be an int or a possibly zero-
-          padded string.
-    :param sector: Int, sector number of data.
-    :param cam: Int, camera number of data.
-    :param ccd: Int, CCD number of data.
-    :param base_dir: Base directory containing BLS files.
-    :return: dataframe containing BLS information on significant peaks.
-    """
-    filename = os.path.join(base_dir, 'sector-' + str(sector), 'ffi', 'cam' + str(cam), 'ccd' + str(ccd), 'BLS',
-                            tic+'.blsanal')
-    df = pd.read_table(filename, delimiter=' ', header=0, escapechar='#', dtype=float)
-    peaks = df[(df['BLS_SignaltoPinknoise_1_0'] > 9) & (df['BLS_Qtran_1_0'] <= 0.2) & (
-                df['BLS_Qingress_1_0'] < 0.5) & (df['BLS_SN_1_0'] > 7) & (df['BLS_Depth_1_0'] < 0.1) & (
-                           df['BLS_fraconenight_1_0'] < 0.8)]
-    return peaks
 
