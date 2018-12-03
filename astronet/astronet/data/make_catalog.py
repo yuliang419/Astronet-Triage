@@ -92,7 +92,12 @@ def _process_tce(tce_table):
     spp = 1
     model = LevineModel
 
+    total = len(tce_table)
+    index = 0
     for tce in tce_table.iterrow():
+        index += 1
+        if index % 10 == 0:
+            print 'Processed %s/%s TCEs' % (index, total)
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
         for cam_id in xrange(1, 5):
