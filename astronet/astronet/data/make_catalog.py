@@ -81,7 +81,7 @@ def bls_params(tic, sector, cam, ccd, base_dir='/pdo/qlp-data/'):
     :return: dataframe containing BLS information on significant peaks.
     """
     filename = os.path.join(base_dir, 'sector-' + str(sector), 'ffi', 'cam' + str(cam), 'ccd' + str(ccd), 'BLS',
-                            tic+'.blsanal')
+                            str(tic)+'.blsanal')
     peaks = pd.read_table(filename, delimiter=' ', header=0, escapechar='#', dtype=float)
     # peaks = df[(df['BLS_SignaltoPinknoise_1_0'] > 9) & (df['BLS_Qtran_1_0'] <= 0.2) & (
     #             df['BLS_Qingress_1_0'] < 0.5) & (df['BLS_SN_1_0'] > 7) & (df['BLS_Depth_1_0'] < 0.1) & (
