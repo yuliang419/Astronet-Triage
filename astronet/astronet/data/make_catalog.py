@@ -26,6 +26,7 @@ from tsig.spacecraft.geometry import LevineModel
 from tsig.mission import MissionProfile
 import multiprocessing
 import argparse
+import logging
 
 
 parser = argparse.ArgumentParser()
@@ -121,12 +122,16 @@ def _process_tce(tce_table):
     tce_table['teff'] = np.nan
     tce_table['logg'] = np.nan
 
+    cnt = 0
+
     for index, tce in tce_table.iterrows():
+        cnt += 1
         if FLAGS.num_worker_processes == 1:
-            if index % 10 == 0:
-                print 'Processed %s/%s TCEs' % (index, total)
+            if cnt % 10 == 0:
+                print 'Processed %s/%s TCEs' % (cnt, total)
         else:
-            print 'Process %s: processing TCE %s/%s ' % (current.name, index, total)
+            if cnt % 10 == 0:
+                logging.info('Process %s: processing TCE %s/%s ' %(current.name, cnt, total))
 
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
