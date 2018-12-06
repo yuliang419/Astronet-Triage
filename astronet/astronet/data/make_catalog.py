@@ -24,7 +24,7 @@ from qlp.util.gaia import GaiaCatalog
 from tsig.spacecraft import Spacecraft
 from tsig.spacecraft.geometry import LevineModel
 from tsig.mission import MissionProfile
-from multiprocessing import Pool
+import multiprocessing
 import argparse
 
 
@@ -105,6 +105,10 @@ def _process_tce(tce_table):
     :param sector: Int, sector number of data
     :return: tce with stellar params, camera and ccd columns filled
     """
+
+    if FLAGS.num_worker_processes > 1:
+        current = multiprocessing.current_process()
+
     sc = Spacecraft()
     spp = 1
     model = LevineModel
@@ -118,8 +122,11 @@ def _process_tce(tce_table):
     tce_table['logg'] = np.nan
 
     for index, tce in tce_table.iterrows():
-        if index % 10 == 0:
-            print 'Processed %s/%s TCEs' % (index, total)
+        if FLAGS.num_worker_processes == 1:
+            if index % 10 == 0:
+                print 'Processed %s/%s TCEs' % (index, total)
+        else:
+            print 'Process %s: processing TCE %s/%s ' % (current.name, index, total)
 
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
@@ -153,7 +160,7 @@ def _process_tce(tce_table):
 def parallelize(data, func):
     partitions = FLAGS.num_worker_processes
     data_split = np.array_split(data, partitions)
-    pool = Pool(partitions)
+    pool = multiprocessing.Pool(partitions)
     data = pd.concat(pool.map(func, data_split))
     pool.close()
     pool.join()
