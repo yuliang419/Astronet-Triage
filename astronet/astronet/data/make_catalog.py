@@ -147,8 +147,9 @@ if __name__ == '__main__':
     print 'Reading Gaia catalog'
     gaia_catalog = GaiaCatalog()
 
-    tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv', '../sector-3-01.csv',
-                       '../sector-3-02.csv']
+    # tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv', '../sector-3-01.csv',
+                       # '../sector-3-02.csv']
+    tce_table_names = ['../bad_tces.csv']
 
     tce_table = pd.DataFrame()
     for table in tce_table_names:
@@ -156,4 +157,4 @@ if __name__ == '__main__':
         tce_table = pd.concat([tce_table, tces], ignore_index=True)
 
     tce_table = _process_tce(tce_table)
-    tce_table.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/tces.csv')
+    tce_table.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/bad_tces_filled.csv')
