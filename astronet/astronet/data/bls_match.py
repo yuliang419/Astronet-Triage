@@ -31,8 +31,9 @@ for bad_list in bad_lists:
     tics = np.loadtxt(os.path.join(base_dir, bad_list), dtype=int)
     new_dataframe['tic_id'] = tics
     new_dataframe['src'] = 'qlp'
+    new_dataframe['toi_id'] = '.01'
     new_dataframe['Sectors'] = int(bad_list.split('-')[1])
     new_dataframe['Disposition'] = 'J'
     bad_tces = pd.concat([bad_tces, new_dataframe], ignore_index=True)
 
-bad_tces.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/bad_tces.csv')
+bad_tces.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/bad_tces.csv', index=False)
