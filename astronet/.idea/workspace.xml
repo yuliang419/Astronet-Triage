@@ -56,11 +56,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="make_catalog.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="make_catalog.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/astronet/data/make_catalog.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1072">
-              <caret line="155" column="79" selection-start-line="155" selection-start-column="21" selection-end-line="155" selection-end-column="79" />
+            <state relative-caret-position="997">
+              <caret line="150" column="30" lean-forward="true" selection-start-line="150" selection-start-column="30" selection-end-line="150" selection-end-column="30" />
               <folding>
                 <element signature="e#710#728#0" expanded="true" />
               </folding>
@@ -68,11 +68,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="bls_match.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="bls_match.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/astronet/data/bls_match.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="22" column="54" selection-start-line="22" selection-start-column="54" selection-end-line="22" selection-end-column="54" />
+            <state relative-caret-position="570">
+              <caret line="38" column="92" lean-forward="true" selection-start-line="38" selection-start-column="92" selection-end-line="38" selection-end-column="92" />
               <folding>
                 <element signature="e#674#693#0" expanded="true" />
               </folding>
@@ -102,8 +102,8 @@
         <option value="$PROJECT_DIR$/astronet/data/generate_kepler_training.py" />
         <option value="$PROJECT_DIR$/light_curve_util/tess_io.py" />
         <option value="$PROJECT_DIR$/astronet/data/generate_input_records.py" />
-        <option value="$PROJECT_DIR$/astronet/data/make_catalog.py" />
         <option value="$PROJECT_DIR$/astronet/data/bls_match.py" />
+        <option value="$PROJECT_DIR$/astronet/data/make_catalog.py" />
       </list>
     </option>
   </component>
@@ -437,22 +437,22 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/astronet/data/make_catalog.py">
+    <entry file="file://$PROJECT_DIR$/astronet/data/bls_match.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1072">
-          <caret line="155" column="79" selection-start-line="155" selection-start-column="21" selection-end-line="155" selection-end-column="79" />
+        <state relative-caret-position="570">
+          <caret line="38" column="92" lean-forward="true" selection-start-line="38" selection-start-column="92" selection-end-line="38" selection-end-column="92" />
           <folding>
-            <element signature="e#710#728#0" expanded="true" />
+            <element signature="e#674#693#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/astronet/data/bls_match.py">
+    <entry file="file://$PROJECT_DIR$/astronet/data/make_catalog.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="22" column="54" selection-start-line="22" selection-start-column="54" selection-end-line="22" selection-end-column="54" />
+        <state relative-caret-position="997">
+          <caret line="150" column="30" lean-forward="true" selection-start-line="150" selection-start-column="30" selection-end-line="150" selection-end-column="30" />
           <folding>
-            <element signature="e#674#693#0" expanded="true" />
+            <element signature="e#710#728#0" expanded="true" />
           </folding>
         </state>
       </provider>

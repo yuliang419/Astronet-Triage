@@ -145,7 +145,8 @@ if __name__ == '__main__':
     print 'Reading Gaia catalog'
     gaia_catalog = GaiaCatalog()
 
-    tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv']
+    tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv', '../sector-3-01.csv',
+                       '../sector-3-02.csv']
 
     tce_table = pd.DataFrame()
     for table in tce_table_names:
