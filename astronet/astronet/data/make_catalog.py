@@ -142,23 +142,23 @@ def _process_tce(tce_table):
                 sc.get_cam_geometry(cam_id),
                 sc.get_ccd_geometries(cam_id), spp)
             if ccd_n[0]:
-                tce_table.camera.iloc[index] = cam_id
-                tce_table.ccd.iloc[index] = ccd_n[0]
+                tce_table.camera.loc[index] = cam_id
+                tce_table.ccd.loc[index] = ccd_n[0]
 
-        tce_table.star_rad.iloc[index] = starparam['rad']
-        tce_table.star_mass.iloc[index] = starparam['mass']
-        tce_table.teff.iloc[index] = starparam['teff']
-        tce_table.logg.iloc[index] = starparam['logg']
+        tce_table.star_rad.loc[index] = starparam['rad']
+        tce_table.star_mass.loc[index] = starparam['mass']
+        tce_table.teff.loc[index] = starparam['teff']
+        tce_table.logg.loc[index] = starparam['logg']
         if np.isnan(tce['RA']):
-            tce_table.RA.iloc[index] = starparam['ra']
-            tce_table.Dec.iloc[index] = starparam['dec']
+            tce_table.RA.loc[index] = starparam['ra']
+            tce_table.Dec.loc[index] = starparam['dec']
 
         if np.isnan(tce['Epoc']) and tce['camera'] > 0:
             bls = bls_params(tce['tic_id'], tce['Sectors'], tce['camera'], tce['ccd'])
-            tce_table.Epoc.iloc[index] = bls['BLS_Tc_1_0'].iloc[0]
-            tce_table.Period.iloc[index] = bls['BLS_Period_1_0'].iloc[0]
-            tce_table.Duration.iloc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
-            tce_table['Transit Depth'].iloc[index] = bls['BLS_Depth_1_0'].iloc[0] * 1e6
+            tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
+            tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
+            tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
+            tce_table['Transit Depth'].loc[index] = bls['BLS_Depth_1_0'].iloc[0] * 1e6
     return tce_table
 
 
