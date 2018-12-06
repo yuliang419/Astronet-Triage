@@ -52,6 +52,8 @@ def star_query(tic):
     starparam["e_logg"] = np.array(t[:]["e_logg"])[0]
     starparam["tmag"] = np.array(t[:]["tmag"])[0]
     starparam["e_tmag"] = np.array(t[:]["e_tmag"])[0]
+    starparam["ra"] = np.array(t[:]["ra"])[0]
+    starparam["dec"] = np.array(t[:]["dec"])[0]
 
     result = gaia_catalog.query_by_loc(starparam["ra"], starparam["dec"], 0.02, starparam["tmag"])
     if result is not None:
