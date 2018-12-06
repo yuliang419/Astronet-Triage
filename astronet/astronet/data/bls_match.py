@@ -20,7 +20,7 @@ import os
 
 
 base_dir = '/pdo/users/yuliang'
-bad_lists = ['sector-1-bad.txt', 'sector-2-bright-bad,txt', 'sector-2-faint-bad.txt', 'sector-3-1-bad.txt']
+bad_lists = ['sector-1-bad.txt', 'sector-2-bright-bad.txt', 'sector-2-faint-bad.txt', 'sector-3-1-bad.txt']
 
 columns = ['src', 'tic_id', 'toi_id', 'Disposition', 'RA', 'Dec', 'Tmag', 'Tmag Err', 'Epoc', 'Epoc Err', 'Period',
            'Period Err', 'Duration', 'Duration Err', 'Transit Depth', 'Transit Depth Err', 'Sectors']
