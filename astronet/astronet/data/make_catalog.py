@@ -24,7 +24,16 @@ from qlp.util.gaia import GaiaCatalog
 from tsig.spacecraft import Spacecraft
 from tsig.spacecraft.geometry import LevineModel
 from tsig.mission import MissionProfile
+from multiprocessing import Pool
+import argparse
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--num_worker_processes",
+    type=int,
+    default=5,
+    help="Number of subprocesses for processing the TCEs in parallel.")
 
 def star_query(tic):
     """
@@ -141,7 +150,19 @@ def _process_tce(tce_table):
     return tce_table
 
 
+def parallelize(data, func):
+    partitions = FLAGS.num_worker_processes
+    data_split = np.array_split(data, partitions)
+    pool = Pool(partitions)
+    data = pd.concat(pool.map(func, data_split))
+    pool.close()
+    pool.join()
+    return data
+
+
 if __name__ == '__main__':
+    FLAGS, unparsed = parser.parse_known_args()
+
     print 'Reading TIC'
     tsig_catalog = catalog.TIC()
     print 'Reading Gaia catalog'
@@ -156,5 +177,8 @@ if __name__ == '__main__':
         tces = pd.read_csv(table, header=0, usecols=[1,2,3,4,5,6,8,10,12,14,16])
         tce_table = pd.concat([tce_table, tces], ignore_index=True)
 
-    tce_table = _process_tce(tce_table)
+    if FLAGS.num_worker_processes == 1:
+        tce_table = _process_tce(tce_table)
+    else:
+        tce_table = parallelize(tce_table, _process_tce)
     tce_table.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/bad_tces_filled.csv')
