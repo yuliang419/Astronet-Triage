@@ -4,7 +4,9 @@
 *pyc
 get_kepler.sh
 astronet/.idea
+*txt
 astronet/kepler
 *cfg
 *.csv
 *.xml
+astronet/tess

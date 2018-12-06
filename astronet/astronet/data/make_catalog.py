@@ -26,7 +26,7 @@ from tsig.spacecraft.geometry import LevineModel
 from tsig.mission import MissionProfile
 
 
-def star_query(tic, ra, dec):
+def star_query(tic):
     """
 
     :param tic:  TIC of the target star. May be an int or a possibly zero-
@@ -37,7 +37,7 @@ def star_query(tic, ra, dec):
     :return: dict containing stellar parameters.
     """
 
-    field_list = ["id", "mass", "rad", "e_rad", "teff", "e_teff", "logg", "e_logg", "tmag", "e_tmag"]
+    field_list = ["id", "mass", "ra", "dec", "rad", "e_rad", "teff", "e_teff", "logg", "e_logg", "tmag", "e_tmag"]
     result, _ = tsig_catalog.query_by_id(tic, ",".join(field_list))
 
     dtype = [(field_list[k], float) for k in xrange(len(field_list))]
@@ -53,7 +53,7 @@ def star_query(tic, ra, dec):
     starparam["tmag"] = np.array(t[:]["tmag"])[0]
     starparam["e_tmag"] = np.array(t[:]["e_tmag"])[0]
 
-    result = gaia_catalog.query_by_loc(ra, dec, 0.02, starparam["tmag"])
+    result = gaia_catalog.query_by_loc(starparam["ra"], starparam["dec"], 0.02, starparam["tmag"])
     if result is not None:
         if not np.isnan(float(result["radius_val"])):
             starparam["rad"] = float(result["radius_val"])
@@ -67,7 +67,7 @@ def star_query(tic, ra, dec):
     return starparam
 
 
-def bls_params(tic, sector, cam, ccd,base_dir='/pdo/qlp-data/'):
+def bls_params(tic, sector, cam, ccd, base_dir='/pdo/qlp-data/'):
     """
 
     :param tic: TIC of the target star. May be an int or a possibly zero-
@@ -112,21 +112,30 @@ def _process_tce(tce_table):
 
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
+        starparam = star_query(tce['tic_id'])
         for cam_id in xrange(1, 5):
             x, y, ccd_n = model.celestial_to_pixel(
-                tce['RA'], tce['Dec'], sc_ra, sc_dec, sc_roll,
+                starparam['ra'], starparam['dec'], sc_ra, sc_dec, sc_roll,
                 sc.get_cam_geometry(cam_id),
                 sc.get_ccd_geometries(cam_id), spp)
             if ccd_n[0]:
                 tce_table.camera.iloc[index] = cam_id
                 tce_table.ccd.iloc[index] = ccd_n[0]
 
-        starparam = star_query(tce['tic_id'], tce['RA'], tce['Dec'])
         tce_table.star_rad.iloc[index] = starparam['rad']
         tce_table.star_mass.iloc[index] = starparam['mass']
         tce_table.teff.iloc[index] = starparam['teff']
         tce_table.logg.iloc[index] = starparam['logg']
+        if np.isnan(tce['RA']):
+            tce_table.RA.iloc[index] = starparam['ra']
+            tce_table.Dec.iloc[index] = starparam['dec']
 
+        if np.isnan(tce['Period']) and tce['camera']:
+            bls = bls_params(tce['tic_id'], tce['Sectors'], tce['camera'], tce['ccd'])
+            tce_table.Epoc.iloc[index] = bls['BLS_Tc_1_0'].iloc[0]
+            tce_table.Period.iloc[index] = bls['BLS_Period_1_0'].iloc[0]
+            tce_table.Duration.iloc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
+            tce_table['Transit Depth'].iloc[index] = bls['BLS_Depth_1_0'].iloc[0] * 1e6
     return tce_table
 
 
