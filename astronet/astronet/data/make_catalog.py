@@ -115,8 +115,8 @@ def _process_tce(tce_table):
     model = LevineModel
 
     total = len(tce_table)
-    tce_table['camera'] = np.nan
-    tce_table['ccd'] = np.nan
+    tce_table['camera'] = 0
+    tce_table['ccd'] = 0
     tce_table['star_rad'] = np.nan
     tce_table['star_mass'] = np.nan
     tce_table['teff'] = np.nan
@@ -141,8 +141,8 @@ def _process_tce(tce_table):
                 sc.get_cam_geometry(cam_id),
                 sc.get_ccd_geometries(cam_id), spp)
             if ccd_n[0]:
-                tce_table.camera.loc[index] = int(cam_id)
-                tce_table.ccd.loc[index] = int(ccd_n[0])
+                tce_table.camera.loc[index] = cam_id
+                tce_table.ccd.loc[index] = ccd_n[0]
 
         tce_table.star_rad.loc[index] = starparam['rad']
         tce_table.star_mass.loc[index] = starparam['mass']
