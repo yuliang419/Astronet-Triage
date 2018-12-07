@@ -154,7 +154,11 @@ def _process_tce(tce_table):
             tce_table.Tmag.loc[index] = starparam['tmag']
 
         if np.isnan(tce['Epoc']) and tce_table.camera.loc[index] > 0:
-            bls = bls_params(tce['tic_id'], tce['Sectors'], tce_table.camera.loc[index], tce_table.ccd.loc[index])
+            try:
+                bls = bls_params(tce['tic_id'], tce['Sectors'], tce_table.camera.loc[index], tce_table.ccd.loc[index])
+            except IOError:
+                print 'Skipped %s. BLS file does not exist.' % tce['tic_id']
+                continue
             tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
             tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
             tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
