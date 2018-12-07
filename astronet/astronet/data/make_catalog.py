@@ -153,8 +153,7 @@ def _process_tce(tce_table):
             tce_table.Dec.loc[index] = starparam['dec']
 
         if np.isnan(tce['Epoc']) and tce_table.camera.loc[index] > 0:
-            bls = bls_params(tce['tic_id'], tce['Sectors'], tce['camera'], tce['ccd'])
-            print bls
+            bls = bls_params(tce['tic_id'], tce['Sectors'], tce_table.camera.loc[index], tce_table.ccd.loc[index])
             tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
             tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
             tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
