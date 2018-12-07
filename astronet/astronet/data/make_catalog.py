@@ -130,8 +130,7 @@ def _process_tce(tce_table):
             if cnt % 10 == 0:
                 print 'Processed %s/%s TCEs' % (cnt, total)
         else:
-            if cnt % 10 == 0:
-                logging.info('Process %s: processing TCE %s/%s ' %(current.name, cnt, total))
+            logging.info('Process %s: processing TCE %s/%s ' %(current.name, cnt, total))
 
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
@@ -153,8 +152,9 @@ def _process_tce(tce_table):
             tce_table.RA.loc[index] = starparam['ra']
             tce_table.Dec.loc[index] = starparam['dec']
 
-        if np.isnan(tce['Epoc']) and tce['camera'] > 0:
+        if np.isnan(tce['Epoc']) and tce_table.camera.loc[index] > 0:
             bls = bls_params(tce['tic_id'], tce['Sectors'], tce['camera'], tce['ccd'])
+            print bls
             tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
             tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
             tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
@@ -163,6 +163,7 @@ def _process_tce(tce_table):
 
 
 def parallelize(data, func):
+    # this doesn't seem to be working properly
     partitions = FLAGS.num_worker_processes
     data_split = np.array_split(data, partitions)
     pool = multiprocessing.Pool(partitions)
