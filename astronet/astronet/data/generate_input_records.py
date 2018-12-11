@@ -143,7 +143,7 @@ parser.add_argument(
 
 # Name and values of the column in the input CSV file to use as training labels.
 _LABEL_COLUMN = "av_training_set"
-_ALLOWED_LABELS = {"PC", "AFP", "NTP"}
+_ALLOWED_LABELS = {"PC", "EB", "J", "IS", "V"}
 
 
 def _set_float_feature(ex, name, value):
@@ -236,30 +236,6 @@ def _tces_with_transit(segstart, segend, tce_table):
     return has_transit
 
 
-def _tces_with_high_mes_transit(segstart, segend, tce_table, threshold=7.1):
-    """Select TCEs with >=2 transits in time range and rescaled MES above some threshold.
-
-    :param segstart: float, start time of time range.
-    :param segend: float, end time of time range.
-    :param tce_table: A Pandas DateFrame containing the TCEs in the shard.
-    :return: list of booleans (True = TCE has at least 2 transits in given time range and MES>=threshold).
-    """
-    has_transit = []
-    for ind, row in tce_table.iterrows():
-        P = row['tce_period']
-        if (row['tce_time0bk'] > segend) or (P > (segend - segstart)):
-            has_transit.append(False)
-            continue
-        num_transits = np.floor((segend - segstart) / P)
-        min_n = np.ceil((segstart - row['tce_time0bk']) / P)
-        midpts = np.arange(min_n, min_n+num_transits) * P + row['tce_time0bk']
-
-        mes = row['tce_max_mult_ev'] * sum((midpts > segstart) & (midpts < segend))**0.5 / float(row[
-            'tce_num_transits'])**0.5
-        has_transit.append((sum((midpts > segstart) & (midpts < segend)) > 1) and (mes >= threshold))
-    return has_transit
-
-
 def _process_file_shard(tce_table, file_name):
   """Processes a single file shard.
 
@@ -280,7 +256,7 @@ def _process_file_shard(tce_table, file_name):
         # skip light curves with no points in given time range
       try:
         example = _process_tce(tce)
-      except (preprocess.EmptyLightCurveError, SparseLightCurveError):
+      except (IOError, preprocess.EmptyLightCurveError, SparseLightCurveError):
         num_skipped += 1
         continue
       if example is not None:
@@ -306,26 +282,21 @@ def create_input_list():
     if type(FLAGS.input_tce_csv_file) == list:
         tce_table = pd.DataFrame()
         for input_file in FLAGS.input_tce_csv_file:
-            table = pd.read_csv(input_file, header=0, usecols=[0,1,2])
+            # no stellar params for now
+            table = pd.read_csv(input_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13])
             tce_table = pd.concat([tce_table, table])
     else:
-        tce_table = pd.read_csv(FLAGS.input_tce_csv_file, header=0)
+        tce_table = pd.read_csv(FLAGS.input_tce_csv_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13])
 
     tce_table = tce_table.dropna()
     tce_table = tce_table[tce_table['Depth'] > 0]
     tce_table["Duration"] /= 24  # Convert hours to days.
     tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
 
+    # replace "IS" and "V" labels with "J" for junk
+    tce_table['Disposition'] = tce_table['Disposition'].replace({'IS': 'J', 'V': 'J'})
     num_tces = len(tce_table)
-    tf.logging.info("Filtered to %d TCEs with labels in %s.", num_tces,
-                    list(_ALLOWED_LABELS))
-
-    # Filter TCE table to those with transits in selected time range
-    has_transit = _tces_with_high_mes_transit(FLAGS.start_time, FLAGS.end_time, tce_table)
-    tce_table = tce_table[has_transit]
-    num_tces = len(tce_table)
-    tf.logging.info("Filtered to %d TCEs with >=2 transits in time range %s - %s.", num_tces,
-                    FLAGS.start_time, FLAGS.end_time)
+    tf.logging.info("Filtered to %d TCEs", num_tces)
 
     return tce_table
 
@@ -334,7 +305,6 @@ def main(argv):
   del argv  # Unused.
 
   # Make the output directory if it doesn't already exist.
-  tf.gfile.MakeDirs(FLAGS.output_dir)
   tf.gfile.MakeDirs(FLAGS.output_dir)
 
   tce_table = create_input_list()
@@ -350,7 +320,6 @@ def main(argv):
   #   val_tces = 10% of TCEs (for validation during training)
   #   test_tces = 10% of TCEs (for final evaluation)
 
-  # Problem: can't exclude objects with no data in given time range before partitioning
   train_cutoff = int(0.80 * num_tces)
   val_cutoff = int(0.90 * num_tces)
   train_tces = tce_table[0:train_cutoff]

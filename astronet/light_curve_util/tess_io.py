@@ -28,7 +28,7 @@ LONG_CADENCE_TIME_DELTA_DAYS = 0.02043422  # Approximately 29.4 minutes.
 
 
 def tess_filenames(tic,
-                     base_dir='/pdo/qlp-data/',
+                     base_dir='/Users/liangyu/Documents/EBClassify/astronet/astronet/tess/',
                      sector=1,
                      cam=4,
                      ccd=1,
@@ -55,7 +55,8 @@ def tess_filenames(tic,
     tic = str(tic)
 
     if not injected:
-        dir = os.path.join(base_dir, 'sector-' + str(sector), 'ffi', 'cam' + str(cam), 'ccd' + str(ccd), 'LC')
+        # modify this as needed
+        dir = os.path.join(base_dir, 'sector-' + str(sector), 'cam' + str(cam), 'ccd' + str(ccd))
         base_name = "%s.h5" % (tic)
         filename = os.path.join(dir, base_name)
     else:

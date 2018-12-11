@@ -86,7 +86,7 @@ light curve produced by Kepler is shown below.
 
 ![Kepler-934](docs/kepler-943.png)
 
-To train a model to identify planets in Kepler light curves, you will need a
+To train a model to identify planets in TESS light curves, you will need a
 training set of labeled *Threshold Crossing Events* (TCEs). A TCE is a periodic
 signal that has been detected in a Kepler light curve, and is associated with a
 *period* (the number of days between each occurrence of the detected signal),
@@ -99,111 +99,34 @@ other phenomena.
 
 ![Kepler-934 Transits](docs/kepler-943-transits.png)
 
-You can download the DR24 TCE Table in CSV format from the [NASA Exoplanet
-Archive](https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=q1_q17_dr24_tce). Ensure the following columns are selected:
+The TESS TCE lists for each sector are available on the TEV website. Download them as CSVs, and run `data/make_catalog.py` to create a catalog that combines all sectors. e.g.:
 
-* `rowid`: Integer ID of the row in the TCE table.
-* `kepid`: Kepler ID of the target star.
-* `tce_plnt_num`: TCE number within the target star.
-* `tce_period`: Period of the detected event, in days.
-* `tce_time0bk`: The time corresponding to the center of the first detected
-      event in Barycentric Julian Day (BJD) minus a constant offset of
-      2,454,833.0 days.
-* `tce_duration`: Duration of the detected event, in hours.
-* `av_training_set`: Autovetter training set label; one of PC (planet candidate),
-      AFP (astrophysical false positive), NTP (non-transiting phenomenon),
-      UNK (unknown).
-
-Next, you will need to download the light curves of the stars corresponding to
-the TCEs in the training set. These are available at the
-[Mikulski Archive for Space Telescopes](https://archive.stsci.edu/). However,
-you almost certainly don't want all of the Kepler data, which consists of almost
-3 million files, takes up over a terabyte of space, and may take several weeks
-to download! To train our model, we only need to download the subset of light
-curves that are associated with TCEs in the DR24 file. To download just those
-light curves, follow these steps:
-
-**NOTE:** Even though we are only downloading a subset of the entire Kepler
-dataset, the files downloaded by the following script take up about **90 GB**.
-
-```bash
-# Filename containing the CSV file of TCEs in the training set.
-TCE_CSV_FILE="${HOME}/astronet/dr24_tce.csv"
-
-# Directory to download Kepler light curves into.
-KEPLER_DATA_DIR="${HOME}/astronet/kepler/"
-
-# Generate a bash script that downloads the Kepler light curves in the training set.
-python astronet/data/generate_download_script.py \
-  --kepler_csv_file=${TCE_CSV_FILE} \
-  --download_dir=${KEPLER_DATA_DIR}
-
-# Run the download script to download Kepler light curves.
-./get_kepler.sh
 ```
-
-The final line should read: `Finished downloading 12669 Kepler targets to
-${KEPLER_DATA_DIR}`
-
-Let's explore the downloaded light curve of the Kepler-90 star! Note that Kepler
-light curves are divided into
-[four quarters each year](https://keplerscience.arc.nasa.gov/data-products.html#kepler-data-release-notes), which are separated by the quarterly rolls that the spacecraft
-made to reorient its solar panels. In the downloaded light curves, each `.fits`
-file corresponds to a specific Kepler quarter, but some quarters are divided
-into multiple `.fits` files.
-
-```python
-# Launch iPython (or Python) from the tensorflow_models/astronet/ directory.
-ipython
-
-In[1]:
-from light_curve_util import kepler_io
-import matplotlib.pyplot as plt
-import numpy as np
-
-In[2]:
-KEPLER_DATA_DIR = "/path/to/kepler/"
-KEPLER_ID = 11442793  # Kepler-90.
-
-In[3]:
-# Read the light curve.
-file_names = kepler_io.kepler_filenames(KEPLER_DATA_DIR, KEPLER_ID)
-assert file_names, "Failed to find .fits files in {}".format(KEPLER_DATA_DIR)
-all_time, all_flux = kepler_io.read_kepler_light_curve(file_names)
-print("Read light curve with {} segments".format(len(all_time)))
-
-In[4]:
-# Plot the fourth segment.
-plt.plot(all_time[3], all_flux[3], ".")
-plt.show()
-
-In[5]:
-# Plot all light curve segments. We first divide by the median flux in each
-# segment, because the segments are on different scales.
-for f in all_flux:
-  f /= np.median(f)
-plt.plot(np.concatenate(all_time), np.concatenate(all_flux), ".")
-plt.show()
+python data/make_catalog.py sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv
 ```
-The output plots should look something like this:
+The output will be a CSV file named `tces.cs with the following columns:
 
-![Kepler 90 Q4](docs/kep90-q4-raw.png)
+* `row_id`: Integer ID of the row in the TCE table.
+* `tic_id`: TIC ID of the target star.
+* `toi_id`: TCE number within the target star. These are structured funny so we'll ignore them for now.
+* `Disposition`: Final disposition from group vetting.
+* `RA`: RA in degrees.
+* `DEC`: Dec in degrees.
+* `Tmag`: TESS magnitude.
+* `Epoc`: The time corresponding to the center of the first detected
+event in Barycentric Julian Day (BJD) minus a constant offset.
+* `Period`: Period of the detected event, in days.
+* `Duration`: Duration of the detected event, in hours.
+* `Transit Depth`: Transit depth in ppm.
+* `Sectors`: Sector number.
+* `camera`: Camera number.
+* `ccd`: CCD number.
+* `star_rad`, `star_mass`, `teff`, `logg`: Stellar parameters from Gaia DR2 or the TIC.
 
-![Kepler 90 All](docs/kep90-all.png)
-
-The first plot is a single segment of approximately 20 days. You can see a
-planet transit --- that's Kepler-90 g! Also, notice that the brightness of the
-star is not flat over time --- there is natural variation in the brightness,
-even away from the planet transit.
-
-The second plot is the full light curve over the entire Kepler mission
-(aproximately 4 years). You can easily see two transiting planets by eye ---
-they are Kepler-90 h (the biggest known planet in the system with the deepest
-transits) and Kepler-90 g (the second biggest known planet in the system with
-the second deepest transits).
+Light curves are stored as h5 files on PDO, in e.g. `/pdo/qlp-data/sector-2/ffi/cam1/ccd1/LC/ `. Download and store them in a local directory called `astronet/tess`.
 
 
-### Process Kepler Data
+### Process TESS Data
 
 To train a model to identify exoplanets, you will need to provide TensorFlow
 with training data in
@@ -215,18 +138,14 @@ The command below will generate a set of sharded TFRecord files for the TCEs in
 the training set. Each `tf.Example` proto will contain the following light curve
 representations:
 
-* `global_view`: Vector of length 2001: a "global view" of the TCE.
-* `local_view`: Vector of length 201: a "local view" of the TCE.
+* `global_view`: Vector of length 201: a "global view" of the TCE.
+* `local_view`: Vector of length 81: a "local view" of the TCE.
+* `secondary_view`: Vector of length 81: a "local view" of the most likely secondary eclipse.
 
 In addition, each `tf.Example` will contain the value of each column in the
-input TCE CSV file. The columns include:
+input TCE CSV file, including transit and stellar parameters.
 
-* `rowid`: Integer ID of the row in the TCE table.
-* `kepid`: Kepler ID of the target star.
-* `tce_plnt_num`: TCE number within the target star.
-* `av_training_set`: Autovetter training set label.
-* `tce_period`: Period of the detected event, in days.
-
+To generate the training set:
 ```bash
 # Use Bazel to create executable Python scripts.
 #
@@ -235,8 +154,14 @@ input TCE CSV file. The columns include:
 #     export PYTHONPATH="/path/to/source/dir/:${PYTHONPATH}"
 bazel build astronet/...
 
+# Filename containing the CSV file of TCEs in the training set.
+TCE_CSV_FILE="astronet/tces.csv"
+
 # Directory to save output TFRecord files into.
-TFRECORD_DIR="${HOME}/astronet/tfrecord"
+TFRECORD_DIR="astronet/tfrecord"
+
+# Directory where light curves are located.
+TESS_DATA_DIR="astronet/tess/"
 
 # Preprocess light curves into sharded TFRecord files using 5 worker processes.
 bazel-bin/astronet/data/generate_input_records \

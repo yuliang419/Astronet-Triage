@@ -27,6 +27,7 @@ from tsig.mission import MissionProfile
 import multiprocessing
 import argparse
 import logging
+import sys
 
 
 parser = argparse.ArgumentParser()
@@ -187,7 +188,8 @@ if __name__ == '__main__':
 
     # tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv', '../sector-3-01.csv',
                        # '../sector-3-02.csv']
-    tce_table_names = ['../bad_tces.csv']
+    # tce_table_names = ['../bad_tces.csv']
+    tce_table_names = sys.argv[1:]
 
     tce_table = pd.DataFrame()
     for table in tce_table_names:
