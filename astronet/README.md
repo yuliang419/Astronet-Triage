@@ -77,12 +77,11 @@ Verify that all dependencies are satisfied by running the unit tests:
 bazel test astronet/... light_curve_util/... third_party/...
 ```
 
-### Download Kepler Data
+### Download TESS Data
 
 A *light curve* is a plot of the brightness of a star over time. We will be
-focusing on light curves produced by the Kepler space telescope, which monitored
-the brightness of 200,000 stars in our milky way galaxy for 4 years. An example
-light curve produced by Kepler is shown below.
+focusing on light curves produced by the TESS space telescope. An example
+light curve (produced by Kepler) is shown below.
 
 ![Kepler-934](docs/kepler-943.png)
 
@@ -104,7 +103,7 @@ The TESS TCE lists for each sector are available on the TEV website. Download th
 ```
 python data/make_catalog.py sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv
 ```
-The output will be a CSV file named `tces.cs with the following columns:
+The output will be a CSV file named `tces.csv` with the following columns:
 
 * `row_id`: Integer ID of the row in the TCE table.
 * `tic_id`: TIC ID of the target star.
