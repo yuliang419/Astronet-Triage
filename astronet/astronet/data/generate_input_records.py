@@ -180,10 +180,10 @@ def _process_tce(tce):
   # Read and process the light curve.
 
   if not tce.repeated:
-    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.kepler_data_dir, FLAGS.start_time,
+    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.tess_data_dir, FLAGS.start_time,
                                                        FLAGS.end_time)
   else:
-    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.kepler_data_dir, FLAGS.repeat_start_time,
+    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.tess_data_dir, FLAGS.repeat_start_time,
                                                            FLAGS.repeat_end_time)
   time, flux = preprocess.phase_fold_and_sort_light_curve(
     time, flux, tce.tce_period, tce.tce_time0bk)

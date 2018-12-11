@@ -165,7 +165,7 @@ TESS_DATA_DIR="astronet/tess/"
 # Preprocess light curves into sharded TFRecord files using 5 worker processes.
 bazel-bin/astronet/data/generate_input_records \
   --input_tce_csv_file=${TCE_CSV_FILE} \
-  --kepler_data_dir=${KEPLER_DATA_DIR} \
+  --tess_data_dir=${TESS_DATA_DIR} \
   --output_dir=${TFRECORD_DIR} \
   --num_worker_processes=5
 ```
