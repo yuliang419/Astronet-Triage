@@ -9,4 +9,5 @@ astronet/kepler
 *cfg
 *.csv
 *.xml
+astronet/tfrecord/*
 astronet/tess
