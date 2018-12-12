@@ -168,6 +168,13 @@ bazel-bin/astronet/data/generate_input_records \
   --tess_data_dir=${TESS_DATA_DIR} \
   --output_dir=${TFRECORD_DIR} \
   --num_worker_processes=5
+  
+# Or run without bazel
+python astronet/data/generate_input_records.py \
+--input_tce_csv_file=${TCE_CSV_FILE} \
+--tess_data_dir=${TESS_DATA_DIR} \
+--output_dir=${TFRECORD_DIR} \
+--num_worker_processes=5
 ```
 
 When the script finishes you will find 8 training files, 1 validation file and

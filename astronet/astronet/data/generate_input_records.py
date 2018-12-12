@@ -118,8 +118,7 @@ parser.add_argument(
 parser.add_argument(
     "--train_with_kepler",
     type=bool,
-    default=True,
-    required=True,
+    default=False,
     help="Include Kepler data in the training set?")
 
 parser.add_argument(
@@ -179,20 +178,18 @@ def _process_tce(tce):
   """
   # Read and process the light curve.
 
-  if not tce.repeated:
-    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.tess_data_dir, FLAGS.start_time,
-                                                       FLAGS.end_time)
-  else:
-    time, flux = preprocess.read_and_process_light_curve(tce.kepid, FLAGS.tess_data_dir, FLAGS.repeat_start_time,
-                                                           FLAGS.repeat_end_time)
+
+  time, flux = preprocess.read_and_process_light_curve(tce.tic_id, FLAGS.tess_data_dir, sector=tce.Sectors,
+                                                       cam=tce.camera,
+                                                       ccd=tce.ccd)
   time, flux = preprocess.phase_fold_and_sort_light_curve(
-    time, flux, tce.tce_period, tce.tce_time0bk)
+    time, flux, tce.Period, tce.Epoc)
 
   # Generate the local and global views.
-  global_view = preprocess.global_view(time, flux, tce.tce_period)
-  local_view = preprocess.local_view(time, flux, tce.tce_period,
-                                     tce.tce_duration)
-  secondary_view = preprocess.secondary_view(time, flux, tce.tce_period, tce.tce_duration)
+  global_view = preprocess.global_view(time, flux, tce.Period)
+  local_view = preprocess.local_view(time, flux, tce.Period,
+                                     tce.Duration)
+  secondary_view = preprocess.secondary_view(time, flux, tce.Period, tce.Duration)
 
   # Make output proto.
   ex = tf.train.Example()
@@ -213,27 +210,6 @@ def _process_tce(tce):
         _set_bytes_feature(ex, col_name, [value])
 
   return ex
-
-
-def _tces_with_transit(segstart, segend, tce_table):
-    """Select TCEs with at least 2 transits in the selected time range and discard the rest.
-
-    :param segstart: float, start time of time range.
-    :param segend: float, end time of time range.
-    :param tce_table: A Pandas DateFrame containing the TCEs in the shard.
-    :return: list of booleans (True = TCE has at least 2 transits in given time range).
-    """
-    has_transit = []
-    for ind, row in tce_table.iterrows():
-        P = row['tce_period']
-        if (row['tce_time0bk'] > segend) or (P > (segend - segstart)):
-            has_transit.append(False)
-            continue
-        num_transits = np.floor((segend - segstart) / P)
-        min_n = np.ceil((segstart - row['tce_time0bk']) / P)
-        midpts = np.arange(min_n, min_n+num_transits) * P + row['tce_time0bk']
-        has_transit.append(sum((midpts > segstart) & (midpts < segend)) > 1)
-    return has_transit
 
 
 def _process_file_shard(tce_table, file_name):
@@ -283,13 +259,17 @@ def create_input_list():
         tce_table = pd.DataFrame()
         for input_file in FLAGS.input_tce_csv_file:
             # no stellar params for now
-            table = pd.read_csv(input_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13])
+            table = pd.read_csv(input_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13], dtype={'Sectors': int,
+                                                                                                  'camera': int,
+                                                                                                  'ccd': int})
             tce_table = pd.concat([tce_table, table])
     else:
-        tce_table = pd.read_csv(FLAGS.input_tce_csv_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13])
+        tce_table = pd.read_csv(FLAGS.input_tce_csv_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13], dtype={'Sectors': int,
+                                                                                                  'camera': int,
+                                                                                                  'ccd': int})
 
     tce_table = tce_table.dropna()
-    tce_table = tce_table[tce_table['Depth'] > 0]
+    tce_table = tce_table[tce_table['Transit Depth'] > 0]
     tce_table["Duration"] /= 24  # Convert hours to days.
     tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
 

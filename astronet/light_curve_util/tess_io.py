@@ -85,21 +85,27 @@ def read_tess_light_curve(filename, flux_key='KSPMagnitude', invert=False):
     api = apgroup["Aperture_%.3d" % bestap]
 
     time = np.array(f["LightCurve"]["BJD"])
-    flux = np.array(api[flux_key])
-    quality_flag = np.where(np.array(api["QualityFlag"]) == 'G')
+    mag = np.array(api[flux_key])
+    if 'QFLAG' in f["LightCurve"].keys():
+        quality_flag = np.where(np.array(f["LightCurve"]['QFLAG']) == 0)
+
+    else:
+        # manually remove outliers
+        sigma = np.std(mag)
+        quality_flag = np.where(mag >= np.median(mag) - 4 * sigma)
 
     # Remove outliers
     time = time[quality_flag]
-    flux = flux[quality_flag]
+    mag = mag[quality_flag]
 
     # Remove NaN flux values.
-    valid_indices = np.where(np.isfinite(flux))
+    valid_indices = np.where(np.isfinite(mag))
     time = time[valid_indices]
-    flux = flux[valid_indices]
+    mag = mag[valid_indices]
 
     if invert:
-        flux *= -1
+        mag *= -1
 
-    return time, flux
+    return time, mag
 
 

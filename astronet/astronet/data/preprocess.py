@@ -52,15 +52,17 @@ def read_and_process_light_curve(tic, tess_data_dir, sector=1, cam=4, ccd=1, inj
   # Read the TESS light curve.
   file_names = tess_io.tess_filenames(tic, tess_data_dir, sector=sector, cam=cam, ccd=ccd, injected=injected, inject_dir=inject_dir)
   if not file_names:
-    raise IOError("Failed to find light curve files in %s for TIC ID %s" %
-                  (tess_data_dir, tic))
+    tf.logging.info("Failed to find light curve files in %s for TIC ID %s" % (tess_data_dir, tic))
+    raise IOError
 
-  all_time, all_flux = tess_io.read_tess_light_curve(file_names)
+  all_time, all_mag = tess_io.read_tess_light_curve(file_names)
 
   if len(all_time) < 1:
       tf.logging.info("Empty light curve. Skipped TIC id %s" % (tic))
       raise EmptyLightCurveError
 
+  all_flux = 10.**(-all_mag/2.5)
+  all_flux -= np.median(all_flux)
   return all_time, all_flux
 
 
