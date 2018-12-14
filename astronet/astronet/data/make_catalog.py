@@ -27,7 +27,6 @@ from tsig.mission import MissionProfile
 import multiprocessing
 import argparse
 import logging
-import sys
 
 
 parser = argparse.ArgumentParser()
@@ -36,6 +35,14 @@ parser.add_argument(
     type=int,
     default=5,
     help="Number of subprocesses for processing the TCEs in parallel.")
+
+parser.add_argument(
+    '--input',
+    nargs='+',
+    help='CSV file(s) containing the TCE table(s) for training. Must contain '
+         'columns: TIC, TCE planet number, final disposition',
+    required=True)
+
 
 def star_query(tic):
     """
@@ -188,8 +195,7 @@ if __name__ == '__main__':
 
     # tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv', '../sector-3-01.csv',
                        # '../sector-3-02.csv']
-    # tce_table_names = ['../bad_tces.csv']
-    tce_table_names = sys.argv[1:]
+    tce_table_names = FLAGS.input
 
     tce_table = pd.DataFrame()
     for table in tce_table_names:
