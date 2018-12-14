@@ -89,19 +89,28 @@ def read_tess_light_curve(filename, flux_key='KSPMagnitude', invert=False):
     if 'QFLAG' in f["LightCurve"].keys():
         quality_flag = np.where(np.array(f["LightCurve"]['QFLAG']) == 0)
 
+        # Remove outliers
+        time = time[quality_flag]
+        mag = mag[quality_flag]
+
+        # Remove NaN flux values.
+        valid_indices = np.where(np.isfinite(mag))
+        time = time[valid_indices]
+        mag = mag[valid_indices]
+
     else:
+        valid_indices = np.where(np.isfinite(mag))
+        time = time[valid_indices]
+        mag = mag[valid_indices]
+
         # manually remove outliers
         sigma = np.std(mag)
         quality_flag = np.where(mag >= np.median(mag) - 4 * sigma)
 
-    # Remove outliers
-    time = time[quality_flag]
-    mag = mag[quality_flag]
+        # Remove outliers
+        time = time[quality_flag]
+        mag = mag[quality_flag]
 
-    # Remove NaN flux values.
-    valid_indices = np.where(np.isfinite(mag))
-    time = time[valid_indices]
-    mag = mag[valid_indices]
 
     if invert:
         mag *= -1

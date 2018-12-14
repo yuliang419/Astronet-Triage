@@ -189,7 +189,7 @@ def _process_tce(tce):
   global_view = preprocess.global_view(time, flux, tce.Period)
   local_view = preprocess.local_view(time, flux, tce.Period,
                                      tce.Duration)
-  secondary_view = preprocess.secondary_view(time, flux, tce.Period, tce.Duration)
+  # secondary_view = preprocess.secondary_view(time, flux, tce.Period, tce.Duration)
 
   # Make output proto.
   ex = tf.train.Example()
@@ -197,7 +197,7 @@ def _process_tce(tce):
   # Set time series features.
   _set_float_feature(ex, "global_view", global_view)
   _set_float_feature(ex, "local_view", local_view)
-  _set_float_feature(ex, "secondary_view", secondary_view)
+  # _set_float_feature(ex, "secondary_view", secondary_view)
 
   # Set other columns.
   for col_name, value in tce.items():

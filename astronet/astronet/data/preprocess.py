@@ -61,8 +61,7 @@ def read_and_process_light_curve(tic, tess_data_dir, sector=1, cam=4, ccd=1, inj
       tf.logging.info("Empty light curve. Skipped TIC id %s" % (tic))
       raise EmptyLightCurveError
 
-  all_flux = 10.**(-all_mag/2.5)
-  all_flux -= np.median(all_flux)
+  all_flux = 10.**(-(all_mag - np.median(all_mag))/2.5)
   return all_time, all_flux
 
 
@@ -157,7 +156,6 @@ def generate_view(time, flux, num_bins, bin_width, t_min, t_max,
   """
   view = median_filter.median_filter(time, flux, num_bins, bin_width, t_min,
                                      t_max)
-
   if normalize:
     view -= np.median(view)
     view /= np.abs(np.min(view))  # In pathological cases, min(view) is zero...
@@ -276,7 +274,11 @@ def find_secondary(time, flux, duration, period, mask_width=2, phase_limit=0.1):
     :param phase_limit: minimum phase to search for secondary eclipse.
     :return: time of centre of most likely secondary.
     """
+    if period < 1:
+        mask_width = 1
+
     mask = mask_transit(time, duration, period, mask_width, phase_limit)
+
     new_time = time[mask]
     new_flux = flux[mask]
 
