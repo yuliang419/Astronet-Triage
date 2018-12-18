@@ -98,10 +98,10 @@ other phenomena.
 
 ![Kepler-934 Transits](docs/kepler-943-transits.png)
 
-The TESS TCE lists for each sector are available on the TEV website. Download them as CSVs, and run `data/make_catalog.py` to create a catalog that combines all sectors. e.g.:
+The TESS TCE lists for each sector are available on the TEV website. Download them as CSVs, and run `make_catalog.py` in the `data` folder to create a catalog that combines all sectors. e.g.:
 
 ```
-python data/make_catalog.py sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv
+python make_catalog.py sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv
 ```
 The output will be a CSV file named `tces.csv` with the following columns:
 
@@ -139,7 +139,6 @@ representations:
 
 * `global_view`: Vector of length 201: a "global view" of the TCE.
 * `local_view`: Vector of length 81: a "local view" of the TCE.
-* `secondary_view`: Vector of length 81: a "local view" of the most likely secondary eclipse.
 
 In addition, each `tf.Example` will contain the value of each column in the
 input TCE CSV file, including transit and stellar parameters.
@@ -217,26 +216,25 @@ import os.path
 import tensorflow as tf
 
 In[2]:
-KEPLER_ID = 11442793  # Kepler-90
+TIC_ID = 270341214
 TFRECORD_DIR = "/path/to/tfrecords/dir"
 
 In[3]:
 # Helper function to find the tf.Example corresponding to a particular TCE.
-def find_tce(kepid, tce_plnt_num, filenames):
+def find_tce(tic_id, filenames):
   for filename in filenames:
     for record in tf.python_io.tf_record_iterator(filename):
       ex = tf.train.Example.FromString(record)
-      if (ex.features.feature["kepid"].int64_list.value[0] == kepid and
-          ex.features.feature["tce_plnt_num"].int64_list.value[0] == tce_plnt_num):
-        print("Found {}_{} in file {}".format(kepid, tce_plnt_num, filename))
+      if ex.features.feature["tic_id"].int64_list.value[0] == tic_id:
+        print("Found {} in file {}".format(tic_id, filename))
         return ex
-  raise ValueError("{}_{} not found in files: {}".format(kepid, tce_plnt_num, filenames))
+        raise ValueError("{} not found in files: {}".format(tic_id, filenames))
 
 In[4]:
-# Find Kepler-90 g.
+# Find sample TCE
 filenames = tf.gfile.Glob(os.path.join(TFRECORD_DIR, "*"))
 assert filenames, "No files found in {}".format(TFRECORD_DIR)
-ex = find_tce(KEPLER_ID, 1, filenames)
+ex = find_tce(TIC_ID, filenames)
 
 In[5]:
 # Plot the global and local views.

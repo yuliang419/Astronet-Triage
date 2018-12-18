@@ -11,3 +11,4 @@ astronet/kepler
 *.xml
 astronet/tfrecord/*
 astronet/tess
+astronet/plots

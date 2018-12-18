@@ -222,7 +222,7 @@ def local_view(time,
                duration,
                num_bins=81,
                bin_width_factor=0.16,
-               num_durations=4):
+               num_durations=2):
   """Generates a 'local view' of a phase folded light curve.
   See Section 3.3 of Shallue & Vanderburg, 2018, The Astronomical Journal.
   http://iopscience.iop.org/article/10.3847/1538-3881/aa9e09/meta
