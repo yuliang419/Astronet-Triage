@@ -64,10 +64,26 @@ def local_global():
           "length": 201,
           "is_time_series": True,
       },
-      "secondary_view": {
-          "length": 81,
-          "is_time_series": True,
-      },
+      # "secondary_view": {
+      #     "length": 81,
+      #     "is_time_series": True,
+      # },
+      # "tce_steff": {
+      #     "length": 1,
+      #     "is_time_series": False,
+      # },
+      # "tce_slogg": {
+      #     "length": 1,
+      #     "is_time_series": False,
+      # },
+      # "tce_sradius": {
+      #     "length": 1,
+      #     "is_time_series": False,
+      # },
+      # "Period": {
+      #     "length": 1,
+      #     "is_time_series": False,
+      # },
   }
 
   # Add configurations for the convolutional layers of time series features.
@@ -93,16 +109,16 @@ def local_global():
           "pool_size": 5,
           "pool_strides": 2,
       },
-      "secondary_view": {
-          "cnn_num_blocks": 2,
-          "cnn_block_size": 2,
-          "cnn_initial_num_filters": 16,
-          "cnn_block_filter_factor": 2,
-          "cnn_kernel_size": 5,
-          "convolution_padding": "same",
-          "pool_size": 7,
-          "pool_strides": 2,
-      },
+      # "secondary_view": {
+      #     "cnn_num_blocks": 2,
+      #     "cnn_block_size": 2,
+      #     "cnn_initial_num_filters": 16,
+      #     "cnn_block_filter_factor": 2,
+      #     "cnn_kernel_size": 5,
+      #     "convolution_padding": "same",
+      #     "pool_size": 7,
+      #     "pool_strides": 2,
+      # },
   }
   config["hparams"]["num_pre_logits_hidden_layers"] = 4
   config["hparams"]["pre_logits_hidden_layer_size"] = 512

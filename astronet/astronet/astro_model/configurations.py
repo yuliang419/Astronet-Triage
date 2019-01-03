@@ -38,13 +38,16 @@ def base():
           },
 
           # Name of the feature containing training labels.
-          "label_feature": "av_training_set",
+          "label_feature": "Disposition",
 
           # Label string to integer id.
           "label_map": {
               "PC": 1,  # Planet Candidate.
-              "AFP": 0,  # Astrophysical False Positive.
-              "NTP": 0,  # Non-Transiting Phenomenon.
+              "EB": 1,
+              "J": 0,  # "Junk"
+              "V": 0,  # Variable star
+              "IS": 0, # Instrumental noise
+              "O": 1, # Other
           },
       },
       # Hyperparameters for building and training the model.
