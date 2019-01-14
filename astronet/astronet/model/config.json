@@ -1,0 +1,58 @@
+{
+  "inputs": {
+    "label_feature": "Disposition", 
+    "label_map": {
+      "PC": 1, 
+      "V": 0, 
+      "IS": 0, 
+      "J": 0, 
+      "O": 0, 
+      "EB": 1
+    }, 
+    "features": {
+      "global_view": {
+        "length": 201, 
+        "is_time_series": true
+      }, 
+      "local_view": {
+        "length": 81, 
+        "is_time_series": true
+      }
+    }
+  }, 
+  "hparams": {
+    "clip_gradient_norm": null, 
+    "time_series_hidden": {
+      "global_view": {
+        "cnn_kernel_size": 5, 
+        "cnn_block_size": 2, 
+        "cnn_initial_num_filters": 16, 
+        "pool_size": 5, 
+        "cnn_num_blocks": 5, 
+        "convolution_padding": "same", 
+        "pool_strides": 2, 
+        "cnn_block_filter_factor": 2
+      }, 
+      "local_view": {
+        "cnn_kernel_size": 5, 
+        "cnn_block_size": 2, 
+        "cnn_initial_num_filters": 16, 
+        "pool_size": 7, 
+        "cnn_num_blocks": 2, 
+        "convolution_padding": "same", 
+        "pool_strides": 2, 
+        "cnn_block_filter_factor": 2
+      }
+    }, 
+    "learning_rate_decay_factor": 0, 
+    "learning_rate_decay_steps": 0, 
+    "learning_rate": 1e-06, 
+    "learning_rate_decay_staircase": true, 
+    "num_pre_logits_hidden_layers": 4, 
+    "batch_size": 64, 
+    "pre_logits_hidden_layer_size": 512, 
+    "pre_logits_dropout_rate": 0.0, 
+    "optimizer": "adam", 
+    "output_dim": 1
+  }
+}

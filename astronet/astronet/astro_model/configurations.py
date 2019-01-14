@@ -32,7 +32,7 @@ def base():
           # Feature specifications.
           "features": {
               "global_view": {
-                  "length": 2001,
+                  "length": 201,
                   "is_time_series": True,
               },
           },
@@ -47,7 +47,7 @@ def base():
               "J": 0,  # "Junk"
               "V": 0,  # Variable star
               "IS": 0, # Instrumental noise
-              "O": 1, # Other
+              "O": 0, # Other
           },
       },
       # Hyperparameters for building and training the model.

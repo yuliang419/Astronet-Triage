@@ -184,26 +184,14 @@ respectively.
 Here's a quick description of what the script does. For a full description, see
 Section 3 of [our paper](http://iopscience.iop.org/article/10.3847/1538-3881/aa9e09/meta).
 
-For each light curve, we first fit a normalization spline to remove any
-low-frequency variability (that is, the natural variability in light from star)
-without removing any deviations caused by planets or other objects. For example,
-the following image shows the normalization spline for the segment of Kepler-90
-that we considered above:
+For TESS light curves, background variability has already been removed (mostly), so the spline-fitting step in the original paper is not necessary. 
 
-![Kepler 90 Q4 Spline](docs/kep90-q4-spline.png)
-
-Next, we divide by the spline to make the star's baseline brightness
-approximately flat. Notice that after normalization the transit of Kepler-90 g
-is still preserved:
-
-![Kepler 90 Q4 Normalized](docs/kep90-q4-normalized.png)
-
-Finally, for each TCE in the input CSV table, we generate two representations of
+For each TCE in the input CSV table, we generate two representations of
 the light curve of that star. Both representations are *phase-folded*, which
 means that we combine all periods of the detected TCE into a single curve, with
 the detected event centered.
 
-Let's explore the generated representations of Kepler-90 g in the output.
+Here's an example of the generated representations (Kepler-90 g) in the output.
 
 ```python
 # Launch iPython (or Python) from the tensorflow_models/astronet/ directory.
@@ -253,15 +241,16 @@ The output should look something like this:
 ### Train an AstroNet Model
 
 The [astronet](astronet/) directory contains several types of neural
-network architecture and various configuration options. To train a convolutional
-neural network to classify Kepler TCEs as either "planet" or "not planet",
+network architecture and various configuration options. This particular version is configured to detect objects that can plausibly be planets (including PCs and EBs whose stellar variability amplitudes are less than half the depths of the eclipses).
+To train a convolutional
+neural network to classify TESS TCEs as either "likely planet" or "not planet",
 using the best configuration from
 [our paper](http://iopscience.iop.org/article/10.3847/1538-3881/aa9e09/meta),
 run the following training script:
 
 ```bash
 # Directory to save model checkpoints into.
-MODEL_DIR="${HOME}/astronet/model/"
+MODEL_DIR="astronet/model/"
 
 # Run the training script.
 bazel-bin/astronet/train \
@@ -270,6 +259,15 @@ bazel-bin/astronet/train \
   --train_files=${TFRECORD_DIR}/train* \
   --eval_files=${TFRECORD_DIR}/val* \
   --model_dir=${MODEL_DIR}
+  
+# Or without Bazel
+python astronet/train.py \
+--model=AstroCNNModel \
+--config_name=local_global \
+--train_files=${TFRECORD_DIR}/train* \
+--eval_files=${TFRECORD_DIR}/val* \
+--model_dir=${MODEL_DIR}
+  
 ```
 
 Optionally, you can also run a [TensorBoard](https://www.tensorflow.org/guide/summaries_and_tensorboard)
