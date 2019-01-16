@@ -87,12 +87,12 @@ import tensorflow as tf
 
 from astronet.data import preprocess
 from light_curve_util.median_filter import SparseLightCurveError
+import warnings
+
+warnings.filterwarnings('error')
 
 
 parser = argparse.ArgumentParser()
-
-_DR24_TCE_URL = ("https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/"
-                 "nph-tblView?app=ExoTbls&config=q1_q17_dr24_tce")
 
 parser.add_argument(
     "--input_tce_csv_file",
@@ -186,9 +186,13 @@ def _process_tce(tce):
     time, flux, tce.Period, tce.Epoc)
 
   # Generate the local and global views.
-  global_view = preprocess.global_view(time, flux, tce.Period)
-  local_view = preprocess.local_view(time, flux, tce.Period,
+  try:
+    global_view = preprocess.global_view(time, flux, tce.Period)
+    local_view = preprocess.local_view(time, flux, tce.Period,
                                      tce.Duration)
+  except RuntimeWarning:
+      tf.logging.info('Too many invalid values in TIC %s', tce.tic_id)
+      raise SparseLightCurveError
   # secondary_view = preprocess.secondary_view(time, flux, tce.Period, tce.Duration)
 
   # Make output proto.

@@ -47,7 +47,7 @@ parser.add_argument(
     help="List of input TCEs")
 
 
-def find_tce(tic_id):
+def find_tce(tic_id, filenames):
     for filename in filenames:
         for record in tf.python_io.tf_record_iterator(filename):
           ex = tf.train.Example.FromString(record)
@@ -58,16 +58,16 @@ def find_tce(tic_id):
     raise ValueError("{} not found in files: {}".format(tic_id, filenames))
 
 
-def check_tce(tce, out):
+def check_tce(tce, out, filenames):
     tic_id = tce['tic_id']
-    ex = find_tce(tic_id)
+    ex = find_tce(tic_id, filenames)
     global_view = np.array(ex.features.feature["global_view"].float_list.value)
     local_view = np.array(ex.features.feature["local_view"].float_list.value)
 
-    if any(np.isnan(global_view)):
+    if not all(np.isfinite(global_view)):
         print(tic_id, "NaN in global_view")
         out.append([tic_id, 'global'])
-    if any(np.isnan(local_view)):
+    if not all(np.isfinite(local_view)):
         print(tic_id, "NaN in local_view")
         out.append([tic_id, 'local'])
     # global_centroid = np.array(ex.features.feature["global_centroid"].float_list.value)
@@ -81,7 +81,7 @@ def main(_):
     out = []
     for ind, row in tce_table.iterrows():
       try:
-        out = check_tce(row, out)
+        out = check_tce(row, out, filenames)
       except ValueError:
         continue
     print(out)

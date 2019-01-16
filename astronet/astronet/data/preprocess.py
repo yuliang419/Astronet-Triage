@@ -24,9 +24,8 @@ import tensorflow as tf
 from light_curve_util import tess_io
 from light_curve_util import median_filter
 from light_curve_util import util
-from third_party.kepler_spline import kepler_spline
+from statsmodels.robust import scale
 
-cadence = 0.02043422
 
 class EmptyLightCurveError(Exception):
     """Indicates light curve with no points in chosen time range."""
@@ -61,50 +60,12 @@ def read_and_process_light_curve(tic, tess_data_dir, sector=1, cam=4, ccd=1, inj
       tf.logging.info("Empty light curve. Skipped TIC id %s" % (tic))
       raise EmptyLightCurveError
 
+  mad = scale.mad(all_mag)
+  valid_indices = np.where(all_mag > np.median(all_mag)-5*mad)
+  all_mag = all_mag[valid_indices]
+  all_time = all_time[valid_indices]
   all_flux = 10.**(-(all_mag - np.median(all_mag))/2.5)
   return all_time, all_flux
-
-
-def spline_detrend(kepid, time, flux):
-    """Detrend light curve by fitting a B-spline
-    Args:
-        time: list of np arrays; timestamps split on gaps
-        flux: list of np arrays; flux split on gaps
-
-    Returns:
-        time: 1D NumPy array; the time values of the light curve.
-        flux: 1D NumPy array; the normalized flux values of the light curve.
-    """
-    # Logarithmically sample candidate break point spacings between 0.5 and 20
-    # days.
-    bkspaces = np.logspace(np.log10(0.5), np.log10(20), num=20)
-    # Generate spline.
-    spline = kepler_spline.choose_kepler_spline(
-        time, flux, bkspaces, penalty_coeff=1.0, verbose=False)[0]
-
-    if spline is None:
-        raise ValueError("Failed to fit spline with Kepler ID %s", kepid)
-
-    # Concatenate the piecewise light curve and spline.
-    time = np.concatenate(time)
-    flux = np.concatenate(flux)
-    spline = np.concatenate(spline)
-
-    # In rare cases the piecewise spline contains NaNs in places the spline could
-    # not be fit. We can't normalize those points if the spline isn't defined
-    # there. Instead we just remove them.
-    finite_i = np.isfinite(spline)
-    if not np.all(finite_i):
-        tf.logging.warn("Incomplete spline with Kepler ID %s", kepid)
-        time = time[finite_i]
-        flux = flux[finite_i]
-        spline = spline[finite_i]
-
-    # "Flatten" the light curve (remove low-frequency variability) by dividing by
-    # the spline.
-    flux /= spline
-
-    return time, flux
 
 
 # Insert GP detrending

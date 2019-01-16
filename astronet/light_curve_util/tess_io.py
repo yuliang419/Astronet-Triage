@@ -24,8 +24,6 @@ import numpy as np
 
 from tensorflow import gfile
 
-LONG_CADENCE_TIME_DELTA_DAYS = 0.02043422  # Approximately 29.4 minutes.
-
 
 def tess_filenames(tic,
                      base_dir='/Users/liangyu/Documents/EBClassify/astronet/astronet/tess/',
