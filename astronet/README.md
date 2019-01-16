@@ -296,6 +296,13 @@ bazel-bin/astronet/evaluate \
   --config_name=local_global \
   --eval_files=${TFRECORD_DIR}/test* \
   --model_dir=${MODEL_DIR}
+  
+# Or without Bazel
+python astronet/evaluate.py \
+--model=AstroCNNModel \
+--config_name=local_global \
+--eval_files=${TFRECORD_DIR}/test* \
+--model_dir=${MODEL_DIR}
 ```
 
 The output should look something like this:
