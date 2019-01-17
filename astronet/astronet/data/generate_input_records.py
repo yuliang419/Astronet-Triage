@@ -139,6 +139,12 @@ parser.add_argument(
     default=5,
     help="Number of subprocesses for processing the TCEs in parallel.")
 
+parser.add_argument(
+    "--make_test_set",
+    type=bool,
+    default=False,
+    help="Generate just a test set rather than the full train/val/test?")
+
 
 # Name and values of the column in the input CSV file to use as training labels.
 _LABEL_COLUMN = "av_training_set"
@@ -285,6 +291,51 @@ def create_input_list():
     return tce_table
 
 
+def make_eval_set(argv):
+    """
+    Make a table of new TCEs into tensorflow.train.Example format for classification purposes.
+    :return:
+    """
+    del argv
+
+    # Make the output directory if it doesn't already exist.
+    tf.gfile.MakeDirs(FLAGS.output_dir)
+
+    tce_table = create_input_list()
+    num_tces = len(tce_table)
+    tf.logging.info('Read in %s TCEs', num_tces)
+
+    # Further split training TCEs into file shards.
+    file_shards = []  # List of (tce_table_shard, file_name).
+    boundaries = np.linspace(0, len(tce_table),
+                           FLAGS.num_train_shards + 1).astype(np.int)
+    for i in range(FLAGS.num_train_shards):
+      start = boundaries[i]
+      end = boundaries[i + 1]
+      file_shards.append((tce_table[start:end], os.path.join(
+          FLAGS.output_dir, "test-%.5d-of-%.5d" % (i, FLAGS.num_train_shards))))
+
+    # Launch subprocesses for the file shards.
+    num_file_shards = len(file_shards)
+    num_processes = min(num_file_shards, FLAGS.num_worker_processes)
+    tf.logging.info("Launching %d subprocesses for %d total file shards",
+                    num_processes, num_file_shards)
+
+    pool = multiprocessing.Pool(processes=num_processes)
+    async_results = [
+        pool.apply_async(_process_file_shard, file_shard)
+        for file_shard in file_shards
+    ]
+    pool.close()
+
+    # Instead of pool.join(), we call async_result.get() to ensure any exceptions
+    # raised by the worker processes are also raised here.
+    for async_result in async_results:
+      async_result.get()
+
+    tf.logging.info("Finished processing %d total file shards", num_file_shards)
+
+
 def main(argv):
   del argv  # Unused.
 
@@ -353,4 +404,7 @@ def main(argv):
 if __name__ == "__main__":
   tf.logging.set_verbosity(tf.logging.INFO)
   FLAGS, unparsed = parser.parse_known_args()
-  tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+  if FLAGS.make_test_set:
+      tf.app.run(main=make_eval_set, argv=[sys.argv[0]] + unparsed)
+  else:
+      tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
