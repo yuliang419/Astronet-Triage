@@ -56,4 +56,4 @@ for bad_list in bad_lists:
     new_dataframe['Disposition'] = 'J'
     bad_tces = pd.concat([bad_tces, new_dataframe], ignore_index=True)
 
-bad_tces.to_csv(FLAGS.save_dir+'bad_tces.csv', index=False)
+bad_tces.to_csv(os.path.join(FLAGS.save_dir,'bad_tces.csv'), index=False)
