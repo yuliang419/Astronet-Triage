@@ -148,6 +148,7 @@ def main(_):
 
       y_true = []
       y_pred = []
+      disp = []
       for filename in filenames:
           for serialized_example in tf.python_io.tf_record_iterator(filename):
               prediction = sess.run(
@@ -156,6 +157,7 @@ def main(_):
               ex = tf.train.Example.FromString(serialized_example)
               y_pred.append(prediction)
               y_true.append(ex.features.feature['Disposition'].bytes_list.value[0] in ['PC', 'EB'])
+              disp.append(ex.features.feature['Disposition'].bytes_list.value[0])
               if (prediction >= 0.5) != (ex.features.feature['Disposition'].bytes_list.value[0] in ['PC','EB']):
                   print("prediction for %s = %s, true label = %s" % (ex.features.feature[
                                                                             "tic_id"].int64_list.value[0],
@@ -165,7 +167,22 @@ def main(_):
                   if FLAGS.plot:
                       plot_tce(ex.features.feature["tic_id"].int64_list.value[0], ex.features.feature['Disposition'].bytes_list.value[0], prediction)
 
-      np.savetxt('true_vs_pred.txt', np.transpose([y_true, y_pred]), fmt='%f')
+      threshold = [0.3, 0.4, 0.5, 0.6]
+      y_true = np.array(y_true)
+      y_pred = np.array(y_pred)
+      disp = np.array(disp)
+      for t in threshold:
+          tp = len(np.where((y_true == 1) & (y_pred >= t))[0])
+          fp = len(np.where((y_true == 0) & (y_pred >= t))[0])
+          fn = len(np.where((y_true == 1) & (y_pred < t))[0])
+          precision = float(tp) / (tp + fp)
+          recall = float(tp) / (tp + fn)
+
+          num_pc = len(np.where((disp == 'PC') & (y_pred < t))[0])
+          pc_frac = float(num_pc) / fn
+          print("Threshold %s: precision=%s, recall=%s. Fraction of PCs in FNs = %s" % (t, precision, recall, pc_frac))
+
+      np.savetxt('true_vs_pred_vanilla_run1.txt', np.transpose([y_true, y_pred]), fmt='%f')
 
 if __name__ == "__main__":
   tf.logging.set_verbosity(tf.logging.INFO)

@@ -17,15 +17,33 @@
 import pandas as pd
 import numpy as np
 import os
+import argparse
 
+parser = argparse.ArgumentParser()
 
-base_dir = '/pdo/users/yuliang'
-bad_lists = ['sector-3-1-bad.txt']
+parser.add_argument(
+    "--base_dir",
+    type=str,
+    default='/pdo/users/yuliang',
+    help="Directory where TCE lists are located.")
+
+parser.add_argument(
+    '--input',
+    nargs='+',
+    help='txt file(s) containing the TIC IDs of TCEs that will go into CSV table.',
+    required=True)
+
+parser.add_argument(
+    "--save_dir",
+    type=str,
+    default='/pdo/users/yuliang',
+    help="Directory where CSV file will be generated.")
 
 columns = ['src', 'tic_id', 'toi_id', 'Disposition', 'RA', 'Dec', 'Tmag', 'Tmag Err', 'Epoc', 'Epoc Err', 'Period',
            'Period Err', 'Duration', 'Duration Err', 'Transit Depth', 'Transit Depth Err', 'Sectors']
 bad_tces = pd.DataFrame(columns=columns)
 
+bad_lists = [os.path.join(FLAGS.base_dir, f) for f in FLAGS.input]
 for bad_list in bad_lists:
     new_dataframe = pd.DataFrame(columns=columns)
     tics = np.loadtxt(os.path.join(base_dir, bad_list), dtype=int)
@@ -36,4 +54,5 @@ for bad_list in bad_lists:
     new_dataframe['Disposition'] = 'J'
     bad_tces = pd.concat([bad_tces, new_dataframe], ignore_index=True)
 
-bad_tces.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/bad_tces.csv', index=False)
+FLAGS, unparsed = parser.parse_known_args()
+bad_tces.to_csv(FLAGS.save_dir+'bad_tces.csv', index=False)

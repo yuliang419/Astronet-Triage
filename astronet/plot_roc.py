@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, auc
 
 
-y_true_vanilla, y_pred_vanilla = np.loadtxt('true_vs_pred_vanilla.txt', unpack=True)
+y_true_vanilla, y_pred_vanilla = np.loadtxt('true_vs_pred_vanilla_run1.txt', unpack=True)
 # y_true_choc, y_pred_choc = np.loadtxt('true_vs_pred_mango.txt', unpack=True)
 p_v, r_v, _ = precision_recall_curve(y_true_vanilla, y_pred_vanilla)
 # auc_v = auc(p_v, r_v)
-p_c, r_c, _ = precision_recall_curve(y_true_choc, y_pred_choc)
+# p_c, r_c, _ = precision_recall_curve(y_true_choc, y_pred_choc)
 # auc_c = auc(p_c, r_c)
 
 
