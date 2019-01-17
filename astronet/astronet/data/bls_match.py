@@ -48,7 +48,7 @@ bad_tces = pd.DataFrame(columns=columns)
 bad_lists = [os.path.join(FLAGS.base_dir, f) for f in FLAGS.input]
 for bad_list in bad_lists:
     new_dataframe = pd.DataFrame(columns=columns)
-    tics = np.loadtxt(os.path.join(base_dir, bad_list), dtype=int)
+    tics = np.loadtxt(bad_list, dtype=int)
     new_dataframe['tic_id'] = tics
     new_dataframe['src'] = 'qlp'
     new_dataframe['toi_id'] = '.01'
