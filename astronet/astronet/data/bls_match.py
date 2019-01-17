@@ -39,6 +39,8 @@ parser.add_argument(
     default='/pdo/users/yuliang',
     help="Directory where CSV file will be generated.")
 
+FLAGS, unparsed = parser.parse_known_args()
+
 columns = ['src', 'tic_id', 'toi_id', 'Disposition', 'RA', 'Dec', 'Tmag', 'Tmag Err', 'Epoc', 'Epoc Err', 'Period',
            'Period Err', 'Duration', 'Duration Err', 'Transit Depth', 'Transit Depth Err', 'Sectors']
 bad_tces = pd.DataFrame(columns=columns)
@@ -54,5 +56,4 @@ for bad_list in bad_lists:
     new_dataframe['Disposition'] = 'J'
     bad_tces = pd.concat([bad_tces, new_dataframe], ignore_index=True)
 
-FLAGS, unparsed = parser.parse_known_args()
 bad_tces.to_csv(FLAGS.save_dir+'bad_tces.csv', index=False)
