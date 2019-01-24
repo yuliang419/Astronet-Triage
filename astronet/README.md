@@ -66,6 +66,7 @@ First, ensure that you have installed the following required packages:
 * **AstroPy** ([instructions](http://www.astropy.org/))
 * **PyDl** ([instructions](https://pypi.python.org/pypi/pydl))
 * **Bazel** ([instructions](https://docs.bazel.build/versions/master/install.html))
+    * Optional
 * **Abseil Python Common Libraries** ([instructions](https://github.com/abseil/abseil-py))
     * Optional: only required for unit tests.
 
@@ -101,7 +102,7 @@ other phenomena.
 The TESS TCE lists for each sector are available on the TEV website. Download them as CSVs, and run `make_catalog.py` in the `data` folder to create a catalog that combines all sectors. e.g.:
 
 ```
-python make_catalog.py sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv
+python make_catalog.py --input sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv
 ```
 The output will be a CSV file named `tces.csv` with the following columns:
 
@@ -123,6 +124,16 @@ event in Barycentric Julian Day (BJD) minus a constant offset.
 * `star_rad`, `star_mass`, `teff`, `logg`: Stellar parameters from Gaia DR2 or the TIC.
 
 Light curves are stored as h5 files on PDO, in e.g. `/pdo/qlp-data/sector-2/ffi/cam1/ccd1/LC/ `. Download and store them in a local directory called `astronet/tess`.
+
+If working with TCEs that are not available on TEV, start by creating a .txt file of TIC IDs of all TCEs that you wish to include, and name the file `sector-x-yyy.txt`, where `x` is the sector number and `yyy` is an optional string. Then run `bls_match.py` in the `data` directory to create a csv file, e.g.:
+
+```
+python bls_match.py --input sector-4-bad.txt sector-4-good.txt
+```
+
+Note that the csv file created this way will have a disposition of `J` for all TCEs, because I mostly used this to create catalogs of junk that didn't make it to group vetting.
+
+Then, run `make_catalog.py` as usual to create a filled in CSV file.
 
 
 ### Process TESS Data

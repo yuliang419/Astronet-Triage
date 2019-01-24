@@ -305,6 +305,11 @@ def make_eval_set(argv):
     num_tces = len(tce_table)
     tf.logging.info('Read in %s TCEs', num_tces)
 
+    # Randomly shuffle the TCE table.
+    np.random.seed(123)
+    tce_table = tce_table.iloc[np.random.permutation(num_tces)]
+    tf.logging.info("Randomly shuffled TCEs.")
+
     # Further split training TCEs into file shards.
     file_shards = []  # List of (tce_table_shard, file_name).
     boundaries = np.linspace(0, len(tce_table),

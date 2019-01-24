@@ -33,7 +33,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--num_worker_processes",
     type=int,
-    default=5,
+    default=1,
     help="Number of subprocesses for processing the TCEs in parallel.")
 
 parser.add_argument(
@@ -174,15 +174,24 @@ def _process_tce(tce_table):
     return tce_table
 
 
-def parallelize(data, func):
+def parallelize(data):
     # this doesn't seem to be working properly
     partitions = FLAGS.num_worker_processes
     data_split = np.array_split(data, partitions)
-    pool = multiprocessing.Pool(partitions)
-    data = pd.concat(pool.map(func, data_split))
+
+    pool = multiprocessing.Pool(processes=partitions)
+    async_results = [
+      pool.apply_async(_process_tce, chunk)
+      for chunk in data_split
+    ]
     pool.close()
-    pool.join()
-    return data
+
+    # Instead of pool.join(), we call async_result.get() to ensure any exceptions
+    # raised by the worker processes are also raised here.
+    for async_result in async_results:
+        async_result.get()
+
+    return async_results
 
 
 if __name__ == '__main__':
