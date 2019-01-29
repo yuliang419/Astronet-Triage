@@ -182,10 +182,11 @@ def main(_):
           pc_frac = float(num_pc) / fn
           print("Threshold %s: precision=%s, recall=%s. Fraction of PCs in FNs = %s" % (t, precision, recall, pc_frac))
 
-      np.savetxt('true_vs_pred_vanilla_run1.txt', np.transpose([y_true, y_pred]), fmt='%f')
+      np.savetxt('true_vs_pred_vanilla_all_'+test_name+'.txt', np.transpose([y_true, y_pred]), fmt='%f')
 
 if __name__ == "__main__":
   tf.logging.set_verbosity(tf.logging.INFO)
   FLAGS, unparsed = parser.parse_known_args()
-  filenames = tf.gfile.Glob(os.path.join(FLAGS.tfrecord_dir, "test*"))
+  test_name = 'test-00000-of-00001'
+  filenames = tf.gfile.Glob(os.path.join(FLAGS.tfrecord_dir, test_name))
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

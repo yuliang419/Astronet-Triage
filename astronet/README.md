@@ -154,6 +154,8 @@ representations:
 In addition, each `tf.Example` will contain the value of each column in the
 input TCE CSV file, including transit and stellar parameters.
 
+Disclaimer: I haven't figured out how to make Bazel work, so just use the plain python version for now.
+
 To generate the training set:
 ```bash
 # Use Bazel to create executable Python scripts.
@@ -186,6 +188,7 @@ python astronet/data/generate_input_records.py \
 --output_dir=${TFRECORD_DIR} \
 --num_worker_processes=5
 ```
+If the optional `--make_test_set` argument is set to True, the code will generate 8 test sets instead of 8 training, 1 validation and 1 test. This is useful for creating test sets out of new data and using them to evaluate a model trained on older data.
 
 When the script finishes you will find 8 training files, 1 validation file and
 1 test file in `TFRECORD_DIR`. The files will match the patterns
@@ -280,7 +283,6 @@ python astronet/train.py \
 --model_dir=${MODEL_DIR}
   
 ```
-
 Optionally, you can also run a [TensorBoard](https://www.tensorflow.org/guide/summaries_and_tensorboard)
 server in a separate process for real-time
 monitoring of training progress and evaluation metrics.
@@ -293,6 +295,8 @@ tensorboard --logdir ${MODEL_DIR}
 The TensorBoard server will show a page like this:
 
 ![TensorBoard](docs/tensorboard.png)
+
+The "loss" plot shows both training and validation losses. The optimum number of training steps is where validation loss reaches a minimum.
 
 ### Evaluate an AstroNet Model
 
@@ -335,7 +339,7 @@ bazel-bin/astronet/predict \
   --model=AstroCNNModel \
   --config_name=local_global \
   --model_dir=${MODEL_DIR} \
-  --kepler_data_dir=${KEPLER_DATA_DIR} \
+  --kepler_data_dir=${TESS_DATA_DIR} \
   --kepler_id=11442793 \
   --period=14.44912 \
   --t0=2.2 \
