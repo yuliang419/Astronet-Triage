@@ -67,26 +67,33 @@ parser.add_argument(
     default=True,
     help="Plot light curves?")
 
+parser.add_argument(
+    "--suffix",
+    type=str,
+    default='',
+    help="Suffix to add to output file names")
 
-def find_tce(kepid):
+
+def find_tce(kepid, sector):
     for filename in filenames:
         for record in tf.python_io.tf_record_iterator(filename):
           ex = tf.train.Example.FromString(record)
-          if ex.features.feature["tic_id"].int64_list.value[0] == kepid:
+          if (ex.features.feature["tic_id"].int64_list.value[0] == kepid) \
+          and (ex.features.feature["Sectors"].int64_list.value[0] == sector):
             # print("Found {}_{} in file {}".format(kepid, tce_plnt_num, filename))
             return ex
     raise ValueError("{} not found in files: {}".format(kepid, filenames))
 
 
-def plot_tce(kepid, true, pred, save_dir='astronet/plots/'):
-    ex = find_tce(kepid)
+def plot_tce(kepid, sector, true, pred, save_dir='astronet/plots/'):
+    ex = find_tce(kepid, sector)
     global_view = np.array(ex.features.feature["global_view"].float_list.value)
     local_view = np.array(ex.features.feature["local_view"].float_list.value)
     # global_centroid = np.array(ex.features.feature["global_centroid"].float_list.value)
     # local_centroid = np.array(ex.features.feature["local_centroid"].float_list.value)
     fig, axes = plt.subplots(1,2, figsize=(15, 5))
     axes[0].plot(global_view, ".")
-    axes[1].plot(local_view, ".", label=true+' - '+str(pred))
+    axes[1].plot(local_view, ".", label=true+' - '+str(pred) + ', ' + str(sector))
     plt.legend()
     plt.savefig(save_dir + str(kepid) + '.png', bbox_inches='tight')
     plt.close('all')
@@ -146,47 +153,58 @@ def main(_):
       tf.logging.info("Successfully loaded checkpoint %s at global step %d.",
                       checkpoint_file, sess.run(model.global_step))
 
-      y_true = []
-      y_pred = []
-      disp = []
+
+      pc_count = 0
       for filename in filenames:
+          print(filename)
+          y_true = []
+          y_pred = []
+          disp = []
           for serialized_example in tf.python_io.tf_record_iterator(filename):
               prediction = sess.run(
                   model.predictions,
                   feed_dict={example_placeholder: serialized_example})[0][0]
               ex = tf.train.Example.FromString(serialized_example)
               y_pred.append(prediction)
+              if ex.features.feature['Disposition'].bytes_list.value[0] == 'PC':
+                pc_count += 1
+
               y_true.append(ex.features.feature['Disposition'].bytes_list.value[0] in ['PC', 'EB'])
               disp.append(ex.features.feature['Disposition'].bytes_list.value[0])
               if (prediction >= 0.5) != (ex.features.feature['Disposition'].bytes_list.value[0] in ['PC','EB']):
-                  print("prediction for %s = %s, true label = %s" % (ex.features.feature[
+                  print("prediction for %s = %s, true label = %s, sector=%s" % (ex.features.feature[
                                                                             "tic_id"].int64_list.value[0],
                                                                         prediction,
-                                                    ex.features.feature['Disposition'].bytes_list.value[0]))
+                                                    ex.features.feature['Disposition'].bytes_list.value[0], 
+                                                    ex.features.feature['Sectors'].int64_list.value[0]))
 
                   if FLAGS.plot:
-                      plot_tce(ex.features.feature["tic_id"].int64_list.value[0], ex.features.feature['Disposition'].bytes_list.value[0], prediction)
+                      plot_tce(ex.features.feature["tic_id"].int64_list.value[0], ex.features.feature['Sectors'].int64_list.value[0], 
+                        ex.features.feature['Disposition'].bytes_list.value[0], prediction)
 
-      threshold = [0.3, 0.4, 0.5, 0.6]
-      y_true = np.array(y_true)
-      y_pred = np.array(y_pred)
-      disp = np.array(disp)
-      for t in threshold:
-          tp = len(np.where((y_true == 1) & (y_pred >= t))[0])
-          fp = len(np.where((y_true == 0) & (y_pred >= t))[0])
-          fn = len(np.where((y_true == 1) & (y_pred < t))[0])
-          precision = float(tp) / (tp + fp)
-          recall = float(tp) / (tp + fn)
+          threshold = [0.3, 0.4, 0.5, 0.6]
+          y_true = np.array(y_true)
+          y_pred = np.array(y_pred)
+          disp = np.array(disp)
+          for t in threshold:
+              tp = len(np.where((y_true == 1) & (y_pred >= t))[0])
+              fp = len(np.where((y_true == 0) & (y_pred >= t))[0])
+              fn = len(np.where((y_true == 1) & (y_pred < t))[0])
+              precision = float(tp) / (tp + fp)
+              recall = float(tp) / (tp + fn)
 
-          num_pc = len(np.where((disp == 'PC') & (y_pred < t))[0])
-          pc_frac = float(num_pc) / fn
-          print("Threshold %s: precision=%s, recall=%s. Fraction of PCs in FNs = %s" % (t, precision, recall, pc_frac))
+              num_pc = len(np.where((disp == 'PC') & (y_pred < t))[0])
 
-      np.savetxt('true_vs_pred_vanilla_all_'+test_name+'.txt', np.transpose([y_true, y_pred]), fmt='%f')
+              print("Threshold %s: precision=%s, recall=%s. Number of PCs in FNs = %s" % (t, precision, recall, num_pc))
+
+          num = filename.split('-')[1]
+          np.savetxt('true_vs_pred_'+FLAGS.suffix+'_'+num+'.txt', np.transpose([y_true, y_pred]), fmt='%f')
+    print('Total %s PCs' %pc_count)      
+
 
 if __name__ == "__main__":
   tf.logging.set_verbosity(tf.logging.INFO)
   FLAGS, unparsed = parser.parse_known_args()
-  test_name = 'test-00000-of-00001'
+  test_name = 'test*'
   filenames = tf.gfile.Glob(os.path.join(FLAGS.tfrecord_dir, test_name))
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

@@ -116,10 +116,10 @@ parser.add_argument(
     help="Base folder containing TESS data.")
 
 parser.add_argument(
-    "--train_with_kepler",
+    "--clean",
     type=bool,
     default=False,
-    help="Include Kepler data in the training set?")
+    help="Exclude TCEs with S/N < 15?")
 
 parser.add_argument(
     "--output_dir",
@@ -196,10 +196,10 @@ def _process_tce(tce):
     global_view = preprocess.global_view(time, flux, tce.Period)
     local_view = preprocess.local_view(time, flux, tce.Period,
                                      tce.Duration)
+    # secondary_view = preprocess.secondary_view(time, flux, tce.Period, tce.Duration)
   except RuntimeWarning:
       tf.logging.info('Too many invalid values in TIC %s', tce.tic_id)
       raise SparseLightCurveError
-  # secondary_view = preprocess.secondary_view(time, flux, tce.Period, tce.Duration)
 
   # Make output proto.
   ex = tf.train.Example()
@@ -260,7 +260,7 @@ def _process_file_shard(tce_table, file_name):
 def create_input_list():
     """Generate pandas dataframe of TCEs to be made into file shards.
 
-    :param
+    :param clean: Exclude TCEs with S/N < 15?
     :return: pandas dataframe containing TCEs. Required columns: TIC, TCE planet number, final disposition
     """
 
@@ -269,16 +269,22 @@ def create_input_list():
         tce_table = pd.DataFrame()
         for input_file in FLAGS.input_tce_csv_file:
             # no stellar params for now
-            table = pd.read_csv(input_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13], dtype={'Sectors': int,
+            table = pd.read_csv(input_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13,18], dtype={'Sectors': int,
                                                                                                   'camera': int,
                                                                                                   'ccd': int})
             tce_table = pd.concat([tce_table, table])
     else:
-        tce_table = pd.read_csv(FLAGS.input_tce_csv_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13], dtype={'Sectors': int,
+        tce_table = pd.read_csv(FLAGS.input_tce_csv_file, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13,18],
+                                dtype={'Sectors': int,
                                                                                                   'camera': int,
                                                                                                   'ccd': int})
 
     tce_table = tce_table.dropna()
+    if FLAGS.clean:
+        tce_table = tce_table[tce_table['SN'] >= 15]
+    # FIXME: uncomment to exclude sector 4
+    # tce_table = tce_table[tce_table['Sectors'] < 4]
+
     tce_table = tce_table[tce_table['Transit Depth'] > 0]
     tce_table["Duration"] /= 24  # Convert hours to days.
     tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
@@ -293,7 +299,8 @@ def create_input_list():
 
 def make_eval_set(argv):
     """
-    Make a table of new TCEs into tensorflow.train.Example format for classification purposes.
+    Make a table of new TCEs into tensorflow.train.Example format for classification purposes. This is useful for
+    creating test sets of TCEs from new sectors that were not used to train the model.
     :return:
     """
     del argv
@@ -301,7 +308,10 @@ def make_eval_set(argv):
     # Make the output directory if it doesn't already exist.
     tf.gfile.MakeDirs(FLAGS.output_dir)
 
+    # create input table containing only sector 4 candidates
     tce_table = create_input_list()
+    tce_table = tce_table[tce_table['Sectors'] > 3]
+
     num_tces = len(tce_table)
     tf.logging.info('Read in %s TCEs', num_tces)
 

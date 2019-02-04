@@ -129,6 +129,7 @@ def _process_tce(tce_table):
     tce_table['star_mass'] = np.nan
     tce_table['teff'] = np.nan
     tce_table['logg'] = np.nan
+    tce_table['SN'] = np.nan
 
     cnt = 0
 
@@ -171,6 +172,7 @@ def _process_tce(tce_table):
             tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
             tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
             tce_table['Transit Depth'].loc[index] = bls['BLS_Depth_1_0'].iloc[0] * 1e6
+            tce_table.SN.loc[index] = bls['BLS_SignaltoPinknoise_1_0'].iloc[0]
     return tce_table
 
 

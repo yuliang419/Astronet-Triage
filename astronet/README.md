@@ -125,15 +125,15 @@ event in Barycentric Julian Day (BJD) minus a constant offset.
 
 Light curves are stored as h5 files on PDO, in e.g. `/pdo/qlp-data/sector-2/ffi/cam1/ccd1/LC/ `. Download and store them in a local directory called `astronet/tess`.
 
-If working with TCEs that are not available on TEV, start by creating a .txt file of TIC IDs of all TCEs that you wish to include, and name the file `sector-x-yyy.txt`, where `x` is the sector number and `yyy` is an optional string. Then run `bls_match.py` in the `data` directory to create a csv file, e.g.:
+If working with TCEs that are not available on TEV, start by creating a .txt file of TIC IDs of all TCEs that you wish to include, and name the file `sector-x-yyy.txt`, where `x` is the sector number and `yyy` is an optional string. Then run `make_empty_catalog.py` in the `data` directory to create a csv file with only a few columns filled in, e.g.:
 
 ```
-python bls_match.py --input sector-4-bad.txt sector-4-good.txt
+python make_empty_catalog.py --input sector-4-bad.txt sector-4-good.txt
 ```
 
 Note that the csv file created this way will have a disposition of `J` for all TCEs, because I mostly used this to create catalogs of junk that didn't make it to group vetting.
 
-Then, run `make_catalog.py` as usual to create a filled in CSV file.
+Then, run `make_catalog.py` as usual to create a CSV file with the rest of the columns filled in.
 
 
 ### Process TESS Data
@@ -325,6 +325,14 @@ The output should look something like this:
 ```bash
 INFO:tensorflow:Saving dict for global step 10000: accuracy/accuracy = 0.9625159, accuracy/num_correct = 1515.0, auc = 0.988882, confusion_matrix/false_negatives = 10.0, confusion_matrix/false_positives = 49.0, confusion_matrix/true_negatives = 1165.0, confusion_matrix/true_positives = 350.0, global_step = 10000, loss = 0.112445444, losses/weighted_cross_entropy = 0.11295206, num_examples = 1574.
 ```
+
+To plot the misclassified TCEs and calculate precision and recall at various thresholds, do the following:
+
+```bash
+python astronet/find_incorrect.py --model_dir=${MODEL_DIR} --tfrecord_dir=${TFRECORD_DIR} --suffix=yyy
+```
+
+This produces plots of the global and local views of misclassified TCEs in a folder called `astronet/plots` and generates a text file called `true_vs_pred_yyy_0000x.txt` with two columns: the true disposition of each TCEs in the test set (0 = junk, 1 = PC or EB), the predicted probability of each TCE being a positive. To plot the precision-recall curve, run `plot_roc.py`.
 
 ### Make Predictions
 
