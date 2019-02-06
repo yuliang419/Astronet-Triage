@@ -99,6 +99,8 @@ other phenomena.
 
 ![Kepler-934 Transits](docs/kepler-943-transits.png)
 
+**The CSV creation step needs to be run on PDO.**
+
 The TESS TCE lists for each sector are available on the TEV website. Download them as CSVs, and run `make_catalog.py` in the `data` folder to create a catalog that combines all sectors. e.g.:
 
 ```
@@ -123,7 +125,7 @@ event in Barycentric Julian Day (BJD) minus a constant offset.
 * `ccd`: CCD number.
 * `star_rad`, `star_mass`, `teff`, `logg`: Stellar parameters from Gaia DR2 or the TIC.
 
-Light curves are stored as h5 files on PDO, in e.g. `/pdo/qlp-data/sector-2/ffi/cam1/ccd1/LC/ `. Download and store them in a local directory called `astronet/tess`.
+Light curves are stored as h5 files on PDO, in e.g. `/pdo/qlp-data/sector-2/ffi/cam1/ccd1/LC/ `. Download and store them in a local directory called `astronet/tess`. This directory should be further divided by sector, camera and ccd, so that the path to each file has the following format: `astronet/tess/sector-1/cam1/ccd1` (replace the numbers with appropriate values for each file).
 
 If working with TCEs that are not available on TEV, start by creating a .txt file of TIC IDs of all TCEs that you wish to include, and name the file `sector-x-yyy.txt`, where `x` is the sector number and `yyy` is an optional string. Then run `make_empty_catalog.py` in the `data` directory to create a csv file with only a few columns filled in, e.g.:
 
@@ -137,6 +139,8 @@ Then, run `make_catalog.py` as usual to create a CSV file with the rest of the c
 
 
 ### Process TESS Data
+
+**All the following steps can be run on any computer that has TESS h5 files stored in a single folder, divided by camera and ccd.**
 
 To train a model to identify exoplanets, you will need to provide TensorFlow
 with training data in
@@ -186,8 +190,12 @@ python astronet/data/generate_input_records.py \
 --input_tce_csv_file=${TCE_CSV_FILE} \
 --tess_data_dir=${TESS_DATA_DIR} \
 --output_dir=${TFRECORD_DIR} \
---num_worker_processes=5
+--num_worker_processes=5 \
+--clean=True \
+--threshold=15
 ```
+If `clean` is set to True, the train and validation sets will only contain TCEs with S/N above some threshold (specified by the `threshold` argument, default 15).
+
 If the optional `--make_test_set` argument is set to True, the code will generate 8 test sets instead of 8 training, 1 validation and 1 test. This is useful for creating test sets out of new data and using them to evaluate a model trained on older data.
 
 When the script finishes you will find 8 training files, 1 validation file and

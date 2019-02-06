@@ -119,7 +119,13 @@ parser.add_argument(
     "--clean",
     type=bool,
     default=False,
-    help="Exclude TCEs with S/N < 15?")
+    help="Exclude TCEs with S/N below some threshold? If True, must also supply a threshold (default 15).")
+
+parser.add_argument(
+    "--threshold",
+    type=float,
+    default=15,
+    help="Exclude TCEs with S/N below this threshold if --clean=True")
 
 parser.add_argument(
     "--output_dir",
@@ -144,6 +150,7 @@ parser.add_argument(
     type=bool,
     default=False,
     help="Generate just a test set rather than the full train/val/test?")
+
 
 
 # Name and values of the column in the input CSV file to use as training labels.
@@ -260,7 +267,6 @@ def _process_file_shard(tce_table, file_name):
 def create_input_list():
     """Generate pandas dataframe of TCEs to be made into file shards.
 
-    :param clean: Exclude TCEs with S/N < 15?
     :return: pandas dataframe containing TCEs. Required columns: TIC, TCE planet number, final disposition
     """
 
@@ -280,8 +286,7 @@ def create_input_list():
                                                                                                   'ccd': int})
 
     tce_table = tce_table.dropna()
-    if FLAGS.clean:
-        tce_table = tce_table[tce_table['SN'] >= 15]
+
     # FIXME: uncomment to exclude sector 4
     # tce_table = tce_table[tce_table['Sectors'] < 4]
 
@@ -310,6 +315,8 @@ def make_eval_set(argv):
 
     # create input table containing only sector 4 candidates
     tce_table = create_input_list()
+    if FLAGS.clean:
+        tce_table = tce_table[tce_table['SN'] >= FLAGS.threshold]
     tce_table = tce_table[tce_table['Sectors'] > 3]
 
     num_tces = len(tce_table)
@@ -374,6 +381,10 @@ def main(argv):
   val_cutoff = int(0.90 * num_tces)
   train_tces = tce_table[0:train_cutoff]
   val_tces = tce_table[train_cutoff:val_cutoff]
+
+  if FLAGS.clean:
+      train_tces = train_tces[train_tces['SN'] >= FLAGS.threshold]
+      val_tces = val_tces[val_tces['SN'] >= FLAGS.threshold]
   test_tces = tce_table[val_cutoff:]
   tf.logging.info(
       "Partitioned %d TCEs into training (%d), validation (%d) and test (%d)",
