@@ -43,6 +43,12 @@ parser.add_argument(
          'columns: TIC, TCE planet number, final disposition',
     required=True)
 
+parser.add_argument(
+    "--base_dir",
+    type=str,
+    default='/pdo/users/yuliang/',
+    help="Directory where TCE lists are located, and where the output will be saved.")
+
 
 def star_query(tic):
     """
@@ -206,7 +212,7 @@ if __name__ == '__main__':
 
     # tce_table_names = ['../sector-1-earlylook.csv', '../sector-2-bright.csv', '../sector-3-01.csv',
                        # '../sector-3-02.csv']
-    tce_table_names = FLAGS.input
+    tce_table_names = [os.path.join(FLAGS.base_dir, csv) for csv in FLAGS.input]
 
     tce_table = pd.DataFrame()
     for table in tce_table_names:
@@ -217,4 +223,4 @@ if __name__ == '__main__':
         tce_table = _process_tce(tce_table)
     else:
         tce_table = parallelize(tce_table, _process_tce)
-    tce_table.to_csv('/pdo/users/yuliang/ebclassify/astronet/astronet/bad_tces_filled.csv')
+    tce_table.to_csv(os.path.join(FLAGS.base_dir,'tces.csv'))

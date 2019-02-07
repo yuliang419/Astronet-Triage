@@ -286,6 +286,7 @@ def create_input_list():
                                                                                                   'ccd': int})
 
     tce_table = tce_table.dropna()
+    tce_table = tce_table.drop_duplicates()
 
     # FIXME: uncomment to exclude sector 4
     # tce_table = tce_table[tce_table['Sectors'] < 4]
