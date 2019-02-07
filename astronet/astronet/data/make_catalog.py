@@ -110,7 +110,19 @@ def bls_params(tic, sector, cam, ccd, base_dir='/pdo/qlp-data/'):
     # peaks = df[(df['BLS_SignaltoPinknoise_1_0'] > 9) & (df['BLS_Qtran_1_0'] <= 0.2) & (
     #             df['BLS_Qingress_1_0'] < 0.5) & (df['BLS_SN_1_0'] > 7) & (df['BLS_Depth_1_0'] < 0.1) & (
     #                        df['BLS_fraconenight_1_0'] < 0.8)]
-    return peaks
+
+    
+    if (peaks['BLS_SignaltoPinknoise_1_0'].iloc[0] > 9) and (peaks['BLS_Npointsintransit_1_0'].iloc[0] > 5):
+        if (peaks['BLS_OOTmag_1_0'].iloc[0] < 12) and (peaks['BLS_SN_1_0'].iloc[0] > 5):
+            is_tce = True
+        elif (peaks['BLS_OOTmag_1_0'].iloc[0] >= 12) and (peaks['BLS_SN_1_0'].iloc[0] > 9):
+            is_tce = True
+        else:
+            is_tce = False
+    else:
+        is_tce = False
+
+    return peaks, is_tce
 
 
 def _process_tce(tce_table):
@@ -170,15 +182,19 @@ def _process_tce(tce_table):
 
         if np.isnan(tce['Epoc']) and tce_table.camera.loc[index] > 0:
             try:
-                bls = bls_params(tce['tic_id'], tce['Sectors'], tce_table.camera.loc[index], tce_table.ccd.loc[index])
+                bls, is_tce = bls_params(tce['tic_id'], tce['Sectors'], tce_table.camera.loc[index], tce_table.ccd.loc[index])
             except IOError:
                 print 'Skipped %s. BLS file does not exist.' % tce['tic_id']
                 continue
-            tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
-            tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
-            tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
-            tce_table['Transit Depth'].loc[index] = bls['BLS_Depth_1_0'].iloc[0] * 1e6
-            tce_table.SN.loc[index] = bls['BLS_SignaltoPinknoise_1_0'].iloc[0]
+
+            if is_tce:
+                tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
+                tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
+                tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
+                tce_table['Transit Depth'].loc[index] = bls['BLS_Depth_1_0'].iloc[0] * 1e6
+                tce_table.SN.loc[index] = bls['BLS_SignaltoPinknoise_1_0'].iloc[0]
+
+    tce_table = tce_table[np.isfinite(tce_table['Period'])]
     return tce_table
 
 
