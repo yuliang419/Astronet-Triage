@@ -49,6 +49,12 @@ parser.add_argument(
     default='/pdo/users/yuliang/',
     help="Directory where TCE lists are located, and where the output will be saved.")
 
+parser.add_argument(
+    "--out_name",
+    type=str,
+    default='tces.csv',
+    help="Name of output file.")
+
 
 def star_query(tic):
     """
@@ -171,14 +177,6 @@ def _process_tce(tce_table):
                 tce_table.camera.loc[index] = cam_id
                 tce_table.ccd.loc[index] = ccd_n[0]
 
-        tce_table.star_rad.loc[index] = starparam['rad']
-        tce_table.star_mass.loc[index] = starparam['mass']
-        tce_table.teff.loc[index] = starparam['teff']
-        tce_table.logg.loc[index] = starparam['logg']
-        if np.isnan(tce['RA']):
-            tce_table.RA.loc[index] = starparam['ra']
-            tce_table.Dec.loc[index] = starparam['dec']
-            tce_table.Tmag.loc[index] = starparam['tmag']
 
         if np.isnan(tce['Epoc']) and tce_table.camera.loc[index] > 0:
             try:
@@ -193,6 +191,14 @@ def _process_tce(tce_table):
                 tce_table.Duration.loc[index] = bls['BLS_Qtran_1_0'].iloc[0] * bls['BLS_Period_1_0'].iloc[0] * 24
                 tce_table['Transit Depth'].loc[index] = bls['BLS_Depth_1_0'].iloc[0] * 1e6
                 tce_table.SN.loc[index] = bls['BLS_SignaltoPinknoise_1_0'].iloc[0]
+                tce_table.star_rad.loc[index] = starparam['rad']
+                tce_table.star_mass.loc[index] = starparam['mass']
+                tce_table.teff.loc[index] = starparam['teff']
+                tce_table.logg.loc[index] = starparam['logg']
+                if np.isnan(tce['RA']):
+                    tce_table.RA.loc[index] = starparam['ra']
+                    tce_table.Dec.loc[index] = starparam['dec']
+                    tce_table.Tmag.loc[index] = starparam['tmag']
 
     tce_table = tce_table[np.isfinite(tce_table['Period'])]
     return tce_table
@@ -239,4 +245,4 @@ if __name__ == '__main__':
         tce_table = _process_tce(tce_table)
     else:
         tce_table = parallelize(tce_table, _process_tce)
-    tce_table.to_csv(os.path.join(FLAGS.base_dir,'tces.csv'))
+    tce_table.to_csv(os.path.join(FLAGS.base_dir, FLAGS.out_name))
