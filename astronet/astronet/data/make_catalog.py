@@ -244,5 +244,5 @@ if __name__ == '__main__':
     if FLAGS.num_worker_processes == 1:
         tce_table = _process_tce(tce_table)
     else:
-        tce_table = parallelize(tce_table, _process_tce)
+        tce_table = parallelize(tce_table)
     tce_table.to_csv(os.path.join(FLAGS.base_dir, FLAGS.out_name))
