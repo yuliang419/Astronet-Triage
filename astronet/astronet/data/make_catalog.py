@@ -163,7 +163,7 @@ def _process_tce(tce_table):
             if cnt % 10 == 0:
                 print 'Processed %s/%s TCEs' % (cnt, total)
         else:
-            logging.info('Process %s: processing TCE %s/%s ' %(current.name, cnt, total))
+            logger.info('Process %s: processing TCE %s/%s ' %(current.name, cnt, total))
 
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
@@ -206,6 +206,7 @@ def _process_tce(tce_table):
 
 def parallelize(data):
     # this doesn't seem to be working properly
+
     partitions = FLAGS.num_worker_processes
     data_split = np.array_split(data, partitions)
 
@@ -237,5 +238,12 @@ if __name__ == '__main__':
     if FLAGS.num_worker_processes == 1:
         tce_table = _process_tce(tce_table)
     else:
+        logger = multiprocessing.get_logger()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch = logging.StreamHandler(stream=sys.stdout)
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+        logger.setLevel(logging.INFO)
+        logger.info('Process started')
         tce_table = parallelize(tce_table)
     tce_table.to_csv(os.path.join(FLAGS.base_dir, FLAGS.out_name))
