@@ -210,18 +210,11 @@ def parallelize(data):
     data_split = np.array_split(data, partitions)
 
     pool = multiprocessing.Pool(processes=partitions)
-    async_results = [
-      pool.apply_async(_process_tce, chunk)
-      for chunk in data_split
-    ]
+    df = pd.concat(pool.map(_process_tce, data_split))
     pool.close()
+    pool.join()
 
-    # Instead of pool.join(), we call async_result.get() to ensure any exceptions
-    # raised by the worker processes are also raised here.
-    for async_result in async_results:
-        async_result.get()
-
-    return async_results
+    return df
 
 
 if __name__ == '__main__':
