@@ -164,7 +164,8 @@ def _process_tce(tce_table):
             if cnt % 10 == 0:
                 print 'Processed %s/%s TCEs' % (cnt, total)
         else:
-            logger.info('Process %s: processing TCE %s/%s ' %(current.name, cnt, total))
+            if cnt % 10 == 0:
+                logger.info('Process %s: processing TCE %s/%s ' %(current.name, cnt, total))
 
         sc_ra, sc_dec, sc_roll = MissionProfile.pointing_to_rdr("sector%d" % tce['Sectors'], "tess_profile.cfg")
         sc.set_pointing(sc_ra, sc_dec, sc_roll)
@@ -206,8 +207,6 @@ def _process_tce(tce_table):
 
 
 def parallelize(data):
-    # this doesn't seem to be working properly
-
     partitions = FLAGS.num_worker_processes
     data_split = np.array_split(data, partitions)
 
