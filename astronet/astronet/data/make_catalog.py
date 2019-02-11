@@ -27,6 +27,7 @@ from tsig.mission import MissionProfile
 import multiprocessing
 import argparse
 import logging
+import sys
 
 
 parser = argparse.ArgumentParser()
