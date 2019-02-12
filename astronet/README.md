@@ -104,9 +104,9 @@ other phenomena.
 The TESS TCE lists for each sector are available on the TEV website. Download them as CSVs, and run `make_catalog.py` in the `data` folder to create a catalog that combines all sectors. e.g.:
 
 ```
-python make_catalog.py --input sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv
+python make_catalog.py --input sector-1-earlylook.csv sector-2-bright.csv sector-3-01.csv sector-3-02.csv --num_worker_processes=20 --base_dir=[wherever your csv file is] --out_name=tces.csv
 ```
-The output will be a CSV file named `tces.csv` with the following columns:
+The output will be a CSV file named `tces.csv` (in the same directory as your input CSV file) with the following columns:
 
 * `row_id`: Integer ID of the row in the TCE table.
 * `tic_id`: TIC ID of the target star.
@@ -125,12 +125,14 @@ event in Barycentric Julian Day (BJD) minus a constant offset.
 * `ccd`: CCD number.
 * `star_rad`, `star_mass`, `teff`, `logg`: Stellar parameters from Gaia DR2 or the TIC.
 
+The catalog creation step may take a while to run, depending on how many TCEs there are. For entire sectors, I'd recommend using at least 20 workers in parallel, or it will take forever. Set `num_worker_processes` to 1 to turn off multiprocessing.
+
 Light curves are stored as h5 files on PDO, in e.g. `/pdo/qlp-data/sector-2/ffi/cam1/ccd1/LC/ `. Download and store them in a local directory called `astronet/tess`. This directory should be further divided by sector, camera and ccd, so that the path to each file has the following format: `astronet/tess/sector-1/cam1/ccd1` (replace the numbers with appropriate values for each file).
 
-If working with TCEs that are not available on TEV, start by creating a .txt file of TIC IDs of all TCEs that you wish to include, and name the file `sector-x-yyy.txt`, where `x` is the sector number and `yyy` is an optional string. Then run `make_empty_catalog.py` in the `data` directory to create a csv file with only a few columns filled in, e.g.:
+If working with TCEs that are not available on TEV, start by creating a .txt file of TIC IDs of all TCEs that you wish to include, and name the file `sector-x-yyy.txt`, where `x` is the sector number and `yyy` is an optional string. Then run `make_empty_catalog.py` in the `data` directory to create a csv file in a specified location (named `sector-X-all.csv`) with only a few columns filled in, e.g.:
 
 ```
-python make_empty_catalog.py --input sector-4-bad.txt sector-4-good.txt
+python make_empty_catalog.py --base_dir=[wherever you text file is] --input sector-4-bad.txt sector-4-good.txt --save_dir=[wherever you want to save the output]
 ```
 
 Note that the csv file created this way will have a disposition of `J` for all TCEs, because I mostly used this to create catalogs of junk that didn't make it to group vetting.
@@ -196,7 +198,7 @@ python astronet/data/generate_input_records.py \
 ```
 If `clean` is set to True, the train and validation sets will only contain TCEs with S/N above some threshold (specified by the `threshold` argument, default 15).
 
-If the optional `--make_test_set` argument is set to True, the code will generate 8 test sets instead of 8 training, 1 validation and 1 test. This is useful for creating test sets out of new data and using them to evaluate a model trained on older data.
+If the optional `--make_test_set` argument is set to True, the code will generate 8 test sets instead of 8 training, 1 validation and 1 test. This is useful for creating test sets out of new data and using them to evaluate a model trained on older data. Setting `clean` to True here would produce test sets containing only TCEs with S/N above some threshold.
 
 When the script finishes you will find 8 training files, 1 validation file and
 1 test file in `TFRECORD_DIR`. The files will match the patterns
