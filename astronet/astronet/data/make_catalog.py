@@ -181,14 +181,13 @@ def _process_tce(tce_table):
                 tce_table.ccd.loc[index] = ccd_n[0]
 
 
-        if np.isnan(tce['Epoc']) and tce_table.camera.loc[index] > 0:
+        if tce_table.camera.loc[index] > 0:
             try:
                 bls, is_tce = bls_params(tce['tic_id'], tce['Sectors'], tce_table.camera.loc[index], tce_table.ccd.loc[index])
             except (IOError, pd.errors.EmptyDataError):
                 print 'Skipped %s. BLS file does not exist.' % tce['tic_id']
                 continue
 
-            print(tce['tic_id'], is_tce, bls['BLS_Qingress_1_0'].iloc[0])
             if is_tce:
                 tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
                 tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
