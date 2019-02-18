@@ -188,6 +188,7 @@ def _process_tce(tce_table):
                 print 'Skipped %s. BLS file does not exist.' % tce['tic_id']
                 continue
 
+            print(tce['tic_id'], is_tce, bls['BLS_Qingress_1_0'].iloc[0])
             if is_tce:
                 tce_table.Epoc.loc[index] = bls['BLS_Tc_1_0'].iloc[0]
                 tce_table.Period.loc[index] = bls['BLS_Period_1_0'].iloc[0]
