@@ -28,8 +28,6 @@ from tensorflow import gfile
 def tess_filenames(tic,
                      base_dir='/Users/liangyu/Documents/EBClassify/astronet/astronet/tess/',
                      sector=1,
-                     cam=4,
-                     ccd=1,
                      injected=False,
                      inject_dir='/pdo/users/yuliang',
                      check_existence=True):
@@ -54,7 +52,7 @@ def tess_filenames(tic,
 
     if not injected:
         # modify this as needed
-        dir = os.path.join(base_dir, 'sector-' + str(sector), 'cam' + str(cam), 'ccd' + str(ccd))
+        dir = os.path.join(base_dir, 'sector-' + str(sector))
         base_name = "%s.h5" % (tic)
         filename = os.path.join(dir, base_name)
     else:

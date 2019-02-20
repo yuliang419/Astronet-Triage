@@ -80,7 +80,6 @@ parser.add_argument(
     help="Number of subprocesses for processing in parallel.")
 
 
-
 def find_tce(kepid, sector):
     for filename in filenames:
         for record in tf.python_io.tf_record_iterator(filename):
@@ -106,13 +105,6 @@ def plot_tce(kepid, sector, true, pred, save_dir='astronet/plots/'):
     plt.close('all')
 
 
-def plot_raw_lc(kepid, start_time, end_time, kepler_dir='astronet/kepler/'):
-    time, flux = read_and_process_light_curve(kepid, kepler_dir, start_time, end_time, max_gap_width=0.75)
-    fig = plt.figure(figsize=(15, 4))
-    plt.plot(time, flux, '.')
-    plt.show()
-
-
 def predict(filename, sess, model, example_placeholder):
     process_name = multiprocessing.current_process().name
     thread = filename.split('-')[1]
@@ -135,7 +127,7 @@ def predict(filename, sess, model, example_placeholder):
                      label, prediction)
 
         if i % 10 == 0:
-            tf.logging.info("%s: Processing %d items in thread %s", process_name, i, thread)
+            tf.logging.info("%s: Processed %d items in thread %s", process_name, i, thread)
     np.savetxt('prediction' + filename.split('-')[1] + '.txt', np.array(y_pred), fmt=['%d', '%4.3f'])
 
 
@@ -209,6 +201,6 @@ def main(_):
 if __name__ == "__main__":
     tf.logging.set_verbosity(tf.logging.INFO)
     FLAGS, unparsed = parser.parse_known_args()
-    test_name = 'test-0000[0-5]*'
+    test_name = 'test-0000*'
     filenames = tf.gfile.Glob(os.path.join(FLAGS.tfrecord_dir, test_name))
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

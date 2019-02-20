@@ -192,9 +192,7 @@ def _process_tce(tce):
   # Read and process the light curve.
 
 
-  time, flux = preprocess.read_and_process_light_curve(tce.tic_id, FLAGS.tess_data_dir, sector=tce.Sectors,
-                                                       cam=tce.camera,
-                                                       ccd=tce.ccd)
+  time, flux = preprocess.read_and_process_light_curve(tce.tic_id, FLAGS.tess_data_dir, sector=tce.Sectors)
   time, flux = preprocess.phase_fold_and_sort_light_curve(
     time, flux, tce.Period, tce.Epoc)
 
@@ -289,7 +287,9 @@ def create_input_list():
     tce_table = tce_table.drop_duplicates()
 
     # FIXME: uncomment to exclude sector 4
-    # tce_table = tce_table[tce_table['Sectors'] < 4]
+    # tce_table = tce_table[tce_table['Sectors'] < 5]
+    spoc = np.loadtxt('astronet/spoc_s6.txt', usecols=0)
+    tce_table = tce_table[tce_table['tic_id'].isin(spoc)]
 
     tce_table = tce_table[tce_table['Transit Depth'] > 0]
     tce_table["Duration"] /= 24  # Convert hours to days.

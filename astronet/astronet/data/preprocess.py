@@ -32,7 +32,7 @@ class EmptyLightCurveError(Exception):
     pass
 
 
-def read_and_process_light_curve(tic, tess_data_dir, sector=1, cam=4, ccd=1, injected=False, inject_dir='/pdo/users/yuliang'):
+def read_and_process_light_curve(tic, tess_data_dir, sector=1, injected=False, inject_dir='/pdo/users/yuliang'):
   """Reads an already detrended light curve.
 
   Args:
@@ -49,7 +49,7 @@ def read_and_process_light_curve(tic, tess_data_dir, sector=1, cam=4, ccd=1, inj
     EmptyLightCurveError: If light curve has no points in given time range.
   """
   # Read the TESS light curve.
-  file_names = tess_io.tess_filenames(tic, tess_data_dir, sector=sector, cam=cam, ccd=ccd, injected=injected, inject_dir=inject_dir)
+  file_names = tess_io.tess_filenames(tic, tess_data_dir, sector=sector, injected=injected, inject_dir=inject_dir)
   if not file_names:
     tf.logging.info("Failed to find light curve files in %s for TIC ID %s" % (tess_data_dir, tic))
     raise IOError

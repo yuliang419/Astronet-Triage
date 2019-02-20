@@ -101,9 +101,7 @@ def _process_tce(feature_config, tce):
             "Only 'global_view' and 'local_view' features are supported.")
 
     # Read and process the light curve.
-    time, flux = preprocess.read_and_process_light_curve(tce.tic_id, FLAGS.tess_data_dir, sector=tce.Sectors,
-                                                         cam=tce.camera,
-                                                         ccd=tce.ccd)
+    time, flux = preprocess.read_and_process_light_curve(tce.tic_id, FLAGS.tess_data_dir, sector=tce.Sectors)
     time, flux = preprocess.phase_fold_and_sort_light_curve(
         time, flux, tce.Period, tce.Epoc)
 

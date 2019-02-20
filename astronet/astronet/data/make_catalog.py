@@ -181,7 +181,7 @@ def _process_tce(tce_table):
                 tce_table.ccd.loc[index] = ccd_n[0]
 
 
-        if tce_table.camera.loc[index] > 0:
+        if (starparam["tmag"] <= 12) and (tce_table.camera.loc[index] > 0):
             try:
                 bls, is_tce = bls_params(tce['tic_id'], tce['Sectors'], tce_table.camera.loc[index], tce_table.ccd.loc[index])
             except (IOError, pd.errors.EmptyDataError):
