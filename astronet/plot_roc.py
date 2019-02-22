@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, auc
 
 
-y_true_vanilla, y_pred_vanilla = np.loadtxt('true_vs_pred_1-3_00003.txt', unpack=True)
-y_true_clean, y_pred_clean = np.loadtxt('true_vs_pred_1-3_clean_00003.txt', unpack=True)
+y_true_vanilla, y_pred_vanilla = np.loadtxt('true_vs_pred_all.txt', unpack=True)
+y_true_clean, y_pred_clean = np.loadtxt('true_vs_pred_clean.txt', unpack=True)
 p_v, r_v, _ = precision_recall_curve(y_true_vanilla, y_pred_vanilla)
 # auc_v = auc(p_v, r_v)
 p_c, r_c, _ = precision_recall_curve(y_true_clean, y_pred_clean)

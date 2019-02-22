@@ -28,8 +28,8 @@ import tensorflow as tf
 from astronet import models
 from astronet.util import config_util
 from astronet.util import configdict
-from astronet.data.preprocess import read_and_process_light_curve
-import multiprocessing
+from collections import defaultdict
+import glob
 
 parser = argparse.ArgumentParser()
 
@@ -74,10 +74,10 @@ parser.add_argument(
     help="Suffix to add to output file names")
 
 parser.add_argument(
-    "--num_worker_processes",
-    type=int,
-    default=1,
-    help="Number of subprocesses for processing in parallel.")
+    "--average",
+    type=bool,
+    default=False,
+    help="Use model averaging? If True, model_dir needs to be a directory that contains all the individual models")
 
 
 def find_tce(kepid, sector):
@@ -105,51 +105,10 @@ def plot_tce(kepid, sector, true, pred, save_dir='astronet/plots/'):
     plt.close('all')
 
 
-def predict(filename, sess, model, example_placeholder):
-    process_name = multiprocessing.current_process().name
-    thread = filename.split('-')[1]
-    y_pred = []
-    for i, serialized_example in enumerate(tf.python_io.tf_record_iterator(filename)):
-        prediction = sess.run(
-            model.predictions,
-            feed_dict={example_placeholder: serialized_example})[0][0]
-        ex = tf.train.Example.FromString(serialized_example)
-        y_pred.append([ex.features.feature["tic_id"].int64_list.value[0], prediction])
-
-        if prediction >= 0.4:
-            label = "PC/EB"
-        else:
-            label = "junk"
-
-        if FLAGS.plot:
-            plot_tce(ex.features.feature["tic_id"].int64_list.value[0],
-                     ex.features.feature['Sectors'].int64_list.value[0],
-                     label, prediction)
-
-        if i % 10 == 0:
-            tf.logging.info("%s: Processed %d items in thread %s", process_name, i, thread)
-    np.savetxt('prediction' + filename.split('-')[1] + '.txt', np.array(y_pred), fmt=['%d', '%4.3f'])
-
-
-def predict_helper(args):
-    return predict(*args)
-
-
-def main(_):
-    # Look up the model class.
-    model_class = models.get_model_class(FLAGS.model)
-
-    # Look up the model configuration.
-    if (FLAGS.config_name is None) == (FLAGS.config_json is None):
-        raise ValueError("Exactly one of config_name or config_json is required.")
-    config = (
-        models.get_model_config(FLAGS.model, FLAGS.config_name)
-        if FLAGS.config_name else config_util.parse_json(FLAGS.config_json))
-    config = configdict.ConfigDict(config)
-
-    checkpoint_file = tf.train.latest_checkpoint(FLAGS.model_dir)
+def predict(model_dir, config, model_class, y_pred = defaultdict(list)):
+    checkpoint_file = tf.train.latest_checkpoint(model_dir)
     if not checkpoint_file:
-        raise ValueError("No checkpoint file found in: %s" % FLAGS.model_dir)
+        raise ValueError("No checkpoint file found in: %s" % model_dir)
 
     # Build the model.
     g = tf.Graph()
@@ -182,21 +141,60 @@ def main(_):
         tf.logging.info("Successfully loaded checkpoint %s at global step %d.",
                         checkpoint_file, sess.run(model.global_step))
 
-        if FLAGS.num_worker_processes == 1:
-            for filename in filenames:
-                print(filename)
-                predict(filename, sess, model, example_placeholder)
+        for filename in filenames:
+            print(filename)
+            for i, serialized_example in enumerate(tf.python_io.tf_record_iterator(filename)):
+                prediction = sess.run(
+                    model.predictions,
+                    feed_dict={example_placeholder: serialized_example})[0][0]
+                ex = tf.train.Example.FromString(serialized_example)
+                y_pred[str(ex.features.feature["tic_id"].int64_list.value[0])+'-'+
+                       str(ex.features.feature["Sectors"].int64_list.value[0])].append(prediction)
 
-        else:
-            # this doesn't work
-            partitions = FLAGS.num_worker_processes
-            iterable = [(filename, sess, model, example_placeholder) for filename in filenames]
+                if prediction >= 0.4:
+                    label = "PC/EB"
+                else:
+                    label = "junk"
 
-            pool = multiprocessing.Pool(processes=partitions)
-            pool.map(predict_helper, iterable)
-            pool.close()
-            pool.join()
+                if FLAGS.plot:
+                    plot_tce(ex.features.feature["tic_id"].int64_list.value[0],
+                             ex.features.feature['Sectors'].int64_list.value[0],
+                             label, prediction)
 
+                if i % 10 == 0:
+                    tf.logging.info("Processed %d items in file %s", i, filename)
+
+    return y_pred
+
+
+def main(_):
+    # Look up the model class.
+    model_class = models.get_model_class(FLAGS.model)
+
+    # Look up the model configuration.
+    if (FLAGS.config_name is None) == (FLAGS.config_json is None):
+        raise ValueError("Exactly one of config_name or config_json is required.")
+    config = (
+        models.get_model_config(FLAGS.model, FLAGS.config_name)
+        if FLAGS.config_name else config_util.parse_json(FLAGS.config_json))
+    config = configdict.ConfigDict(config)
+
+    if FLAGS.average:
+        model_dirs = glob.glob(FLAGS.model_dir+'/*')
+    else:
+        model_dirs = [FLAGS.model_dir]
+
+    y_pred = defaultdict(list)
+    for model_dir in model_dirs:
+        # append a new prediction to y_pred for each TCE every time
+        y_pred = predict(model_dir, config, model_class, y_pred)
+
+    y_pred_average = []
+    for tce in y_pred:
+        average_pred = np.mean(y_pred[tce])
+        y_pred_average.append([tce, average_pred])
+
+    np.savetxt('prediction_'+FLAGS.suffix+'.txt', np.array(y_pred_average), fmt=['%s', '%4.3f'])
 
 if __name__ == "__main__":
     tf.logging.set_verbosity(tf.logging.INFO)

@@ -181,7 +181,7 @@ def local_view(time,
                flux,
                period,
                duration,
-               num_bins=81,
+               num_bins=61,
                bin_width_factor=0.16,
                num_durations=2):
   """Generates a 'local view' of a phase folded light curve.
@@ -284,7 +284,7 @@ def secondary_view(time,
                flux,
                period,
                duration,
-               num_bins=81,
+               num_bins=61,
                bin_width_factor=0.16,
                num_durations=4
                ):

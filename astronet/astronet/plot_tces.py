@@ -89,7 +89,7 @@ def plot_raw_lc(tic_id, start_time, end_time, tess_dir='astronet/tess/'):
 def main(_):
     infile = FLAGS.infile
     tce_table = pd.read_csv(infile, header=0, usecols=[0,1,2,3,7,8,9,10,11,12,13])
-    tce_table = tce_table[tce_table['Disposition'] == 'PC']
+    tce_table = tce_table[tce_table['Sectors'] == 5]
     for ind, row in tce_table.iterrows():
       try:
         plot_tce(row)

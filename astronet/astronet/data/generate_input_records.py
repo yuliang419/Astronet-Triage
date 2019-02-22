@@ -117,7 +117,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--clean",
-    type=bool,
+    action='store_true',
     default=False,
     help="Exclude TCEs with S/N below some threshold? If True, must also supply a threshold (default 15).")
 
@@ -147,7 +147,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--make_test_set",
-    type=bool,
+    action='store_true',
     default=False,
     help="Generate just a test set rather than the full train/val/test?")
 
@@ -287,9 +287,7 @@ def create_input_list():
     tce_table = tce_table.drop_duplicates()
 
     # FIXME: uncomment to exclude sector 4
-    # tce_table = tce_table[tce_table['Sectors'] < 5]
-    spoc = np.loadtxt('astronet/spoc_s6.txt', usecols=0)
-    tce_table = tce_table[tce_table['tic_id'].isin(spoc)]
+    # tce_table = tce_table[tce_table['Sectors'] == 5]
 
     tce_table = tce_table[tce_table['Transit Depth'] > 0]
     tce_table["Duration"] /= 24  # Convert hours to days.
@@ -384,6 +382,7 @@ def main(argv):
   val_tces = tce_table[train_cutoff:val_cutoff]
 
   if FLAGS.clean:
+      tf.logging.info("Excluding S/N < %s", FLAGS.threshold)
       train_tces = train_tces[train_tces['SN'] >= FLAGS.threshold]
       val_tces = val_tces[val_tces['SN'] >= FLAGS.threshold]
   test_tces = tce_table[val_cutoff:]

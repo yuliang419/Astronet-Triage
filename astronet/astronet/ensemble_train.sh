@@ -1,10 +1,11 @@
 #!/bin/bash
 # Train 10 neural networks with different random initializations and average the results when making predictions
-# args are model directory, number of training steps, tfrecord directory
+# args are model directory, number of training steps, tfrecord directory, S/N threshold
 
 dir=$1
 steps=$2
 TFRECORD_DIR=$3
+thresh=$4
 if ! [ -d "$dir" ]; then
 	mkdir "$dir"
 fi
@@ -20,7 +21,7 @@ do
 		--train_files=$TFRECORD_DIR/train* \
 		--eval_files=$TFRECORD_DIR/val* \
 		--model_dir=$model_dir \
-		--train_steps=$steps
+		--train_steps=$steps \
 
 done
 
