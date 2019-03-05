@@ -4,7 +4,7 @@
 
 ## Contact
 
-Chris Shallue: [@cshallue](https://github.com/cshallue)
+Liang Yu: yuliang@mit.edu
 
 ## Background
 
@@ -22,7 +22,7 @@ For shorter summaries, see:
 
 ## Citation
 
-If you find this code useful, please cite our paper:
+I'm working on a paper that summarizes this code, which will also be a chapter of my thesis. For now, please cite the original Shallue & Vanderburg paper:
 
 Shallue, C. J., & Vanderburg, A. (2018). Identifying Exoplanets with Deep
 Learning: A Five-planet Resonant Chain around Kepler-80 and an Eighth Planet
@@ -373,6 +373,6 @@ python astronet/batch_predict.py \
 
 If the option `--plot` argument is included, you must also include a `--save_dir`. Plots of the global and local views of TCEs in the test set will be saved under that directory.
 
-If you trained an ensemble of models and want to use model averaging, include a `--average` argument and make sure`${MODEL_DIR}` is set to the directory that contains the 10 subdirectories. If there's no `--average` argument, `${MODEL_DIR}` is just the directory containing your single model.
+If you trained an ensemble of models and want to use model averaging, include a `--average` argument and make sure `${MODEL_DIR}` is set to the directory that contains the 10 subdirectories. If there's no `--average` argument, `${MODEL_DIR}` is just the directory containing your single model.
 
 The output of this step is a file called `prediction_yyy.txt`, saved in your current directory. This file contains the TIC ID of each object in your input list, and the model's prediction of the object being a plausible planet candidate. In this version (triage), that means the object is likely either a PC or an EB without too much stellar activity. 
