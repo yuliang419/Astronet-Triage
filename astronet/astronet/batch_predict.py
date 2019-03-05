@@ -63,9 +63,14 @@ parser.add_argument(
 
 parser.add_argument(
     "--plot",
-    type=bool,
-    default=True,
+    default=False,
+    action='store_true',
     help="Plot light curves?")
+
+parser.add_argument(
+    "--save_dir",
+    type=str,
+    help="Directory to save plots.")
 
 parser.add_argument(
     "--suffix",
@@ -75,7 +80,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--average",
-    type=bool,
+    action='store_true',
     default=False,
     help="Use model averaging? If True, model_dir needs to be a directory that contains all the individual models")
 
@@ -148,8 +153,7 @@ def predict(model_dir, config, model_class, y_pred = defaultdict(list)):
                     model.predictions,
                     feed_dict={example_placeholder: serialized_example})[0][0]
                 ex = tf.train.Example.FromString(serialized_example)
-                y_pred[str(ex.features.feature["tic_id"].int64_list.value[0])+'-'+
-                       str(ex.features.feature["Sectors"].int64_list.value[0])].append(prediction)
+                y_pred[ex.features.feature["tic_id"].int64_list.value[0]].append(prediction)
 
                 if prediction >= 0.4:
                     label = "PC/EB"
@@ -159,9 +163,9 @@ def predict(model_dir, config, model_class, y_pred = defaultdict(list)):
                 if FLAGS.plot:
                     plot_tce(ex.features.feature["tic_id"].int64_list.value[0],
                              ex.features.feature['Sectors'].int64_list.value[0],
-                             label, prediction)
+                             label, prediction, FLAGS.save_dir)
 
-                if i % 10 == 0:
+                if i % 100 == 0:
                     tf.logging.info("Processed %d items in file %s", i, filename)
 
     return y_pred
@@ -194,7 +198,7 @@ def main(_):
         average_pred = np.mean(y_pred[tce])
         y_pred_average.append([tce, average_pred])
 
-    np.savetxt('prediction_'+FLAGS.suffix+'.txt', np.array(y_pred_average), fmt=['%s', '%4.3f'])
+    np.savetxt('prediction_'+FLAGS.suffix+'.txt', np.array(y_pred_average), fmt=['%d', '%4.3f'])
 
 if __name__ == "__main__":
     tf.logging.set_verbosity(tf.logging.INFO)

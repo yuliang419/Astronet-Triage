@@ -75,7 +75,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--average",
-    type=bool,
+    action='store_true',
     default=False,
     help="Use model averaging? If True, model_dir needs to be a directory that contains all the individual models")
 

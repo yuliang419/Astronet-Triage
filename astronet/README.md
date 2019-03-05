@@ -111,7 +111,7 @@ The output will be a CSV file named `tces.csv` (in the same directory as your in
 * `row_id`: Integer ID of the row in the TCE table.
 * `tic_id`: TIC ID of the target star.
 * `toi_id`: TCE number within the target star. These are structured funny so we'll ignore them for now.
-* `Disposition`: Final disposition from group vetting.
+* `Disposition`: Final disposition from group vetting (should be one of the following: PC (planet candidate), EB (eclipsing binary), IS (instrumental noise), V (variability), O (other), J (junk).
 * `RA`: RA in degrees.
 * `DEC`: Dec in degrees.
 * `Tmag`: TESS magnitude.
@@ -194,13 +194,11 @@ python astronet/data/generate_input_records.py \
 --input_tce_csv_file=${TCE_CSV_FILE} \
 --tess_data_dir=${TESS_DATA_DIR} \
 --output_dir=${TFRECORD_DIR} \
---num_worker_processes=5 \
---clean=True \
---threshold=15
+--num_worker_processes=5 
 ```
-If `clean` is set to True, the train and validation sets will only contain TCEs with S/N above some threshold (specified by the `threshold` argument, default 15).
+If `--clean` is included as an argument, the train and validation sets will only contain TCEs with S/N above some threshold (specified by the `--threshold` argument, default 15).
 
-If the optional `--make_test_set` argument is set to True, the code will generate 8 test sets instead of 8 training, 1 validation and 1 test. This is useful for creating test sets out of new data and using them to evaluate a model trained on older data. Setting `clean` to True here would produce test sets containing only TCEs with S/N above some threshold.
+If the optional `--make_test_set` argument is included, the code will generate 8 test sets instead of 8 training, 1 validation and 1 test. This is useful for creating test sets out of new data and using them to evaluate a model trained on older data. Setting `--clean` here would produce test sets containing only TCEs with S/N above some threshold.
 
 When the script finishes you will find 8 training files, 1 validation file and
 1 test file in `TFRECORD_DIR`. The files will match the patterns
@@ -344,46 +342,37 @@ To plot the misclassified TCEs and calculate precision and recall at various thr
 python astronet/find_incorrect.py --model_dir=${MODEL_DIR} --tfrecord_dir=${TFRECORD_DIR} --suffix=yyy
 ```
 
-This produces plots of the global and local views of misclassified TCEs in a folder called `astronet/plots` and generates a text file called `true_vs_pred_yyy_0000x.txt` with two columns: the true disposition of each TCEs in the test set (0 = junk, 1 = PC or EB), the predicted probability of each TCE being a positive. To plot the precision-recall curve, run `plot_roc.py`.
+This produces plots of the global and local views of misclassified TCEs in a folder called `astronet/plots` and generates a text file called `true_vs_pred_yyy.txt` with two columns: the true disposition of each TCEs in the test set (0 = junk, 1 = PC or EB), the predicted probability of each TCE being a positive. To plot the precision-recall curve, run `plot_roc.py` with the appropriate true_vs_pred file (you'll have to modify the code directly).
+
+### Model Averaging
+You can train a set of 10 models with random initializations and average their outputs when making predictions. This helps prevent overfitting and makes the model more robust. To do this, use the following command:
+
+```bash
+./astronet/ensemble_train.sh ${MODEL_DIR} 14000 ${TFRECORD_DIR}
+```
+The 14000 here is the number of train steps I used for each model. The code will produce 10 subdirectories under `${MODEL_DIR}`.
 
 ### Make Predictions
 
-Suppose you detect a weak TCE in the light curve of the Kepler-90 star, with
-period 14.44912 days, duration 2.70408 hours (0.11267 days) beginning 2.2 days
-after 12:00 on 1/1/2009 (the year the Kepler telescope launched). To run this
-TCE though your trained model, execute the following command:
+The easiest way to make predictions for a list of new TCEs is to run `generate_input_records.py` following instructions above with the `--make_test_set` argument included, such that all the new TCEs to be classified are stored as tfrecords. Then run the following:
 
 ```bash
-# Generate a prediction for a new TCE.
-bazel-bin/astronet/predict \
-  --model=AstroCNNModel \
-  --config_name=local_global \
+# Make a directory for plots
+mkdir astronet/plots
+SAVE_DIR=astronet/plots
+
+# Generate a prediction for a list of new TCEs.
+python astronet/batch_predict.py \
   --model_dir=${MODEL_DIR} \
-  --kepler_data_dir=${TESS_DATA_DIR} \
-  --kepler_id=11442793 \
-  --period=14.44912 \
-  --t0=2.2 \
-  --duration=0.11267 \
-  --output_image_file="${HOME}/astronet/kepler-90i.png"
+  --tfrecord_dir=${TFRECORD_DIR} \
+  --suffix=yyy \
+  --average \
+  --plot \
+  --save_dir=${SAVE_DIR}
 ```
 
-The output should look like this:
+If the option `--plot` argument is included, you must also include a `--save_dir`. Plots of the global and local views of TCEs in the test set will be saved under that directory.
 
-```Prediction: 0.9480018```
+If you trained an ensemble of models and want to use model averaging, include a `--average` argument and make sure`${MODEL_DIR}` is set to the directory that contains the 10 subdirectories. If there's no `--average` argument, `${MODEL_DIR}` is just the directory containing your single model.
 
-This means the model is about 95% confident that the input TCE is a planet.
-Of course, this is only a small step in the overall process of discovering and
-validating an exoplanet: the model’s prediction is not proof one way or the
-other. The process of validating this signal as a real exoplanet requires
-significant follow-up work by an expert astronomer --- see Sections 6.3 and 6.4
-of [our paper](http://iopscience.iop.org/article/10.3847/1538-3881/aa9e09/meta)
-for the full details. In this particular case, our follow-up analysis validated
-this signal as a bona fide exoplanet: it’s now called
-[Kepler-90 i](https://www.nasa.gov/press-release/artificial-intelligence-nasa-data-used-to-discover-eighth-planet-circling-distant-star),
-and is the record-breaking eighth planet discovered around the Kepler-90 star!
-
-In addition to the output prediction, the script will also produce a plot of the
-input representations. For Kepler-90 i, the plot should look something like
-this:
-
-![Kepler 90 h Processed](docs/kep90i-localglobal.png)
+The output of this step is a file called `prediction_yyy.txt`, saved in your current directory. This file contains the TIC ID of each object in your input list, and the model's prediction of the object being a plausible planet candidate. In this version (triage), that means the object is likely either a PC or an EB without too much stellar activity. 

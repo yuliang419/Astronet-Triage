@@ -5,7 +5,7 @@
 dir=$1
 steps=$2
 TFRECORD_DIR=$3
-thresh=$4
+
 if ! [ -d "$dir" ]; then
 	mkdir "$dir"
 fi
