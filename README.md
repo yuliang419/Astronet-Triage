@@ -34,7 +34,7 @@ Full text available at [*The Astronomical Journal*](http://iopscience.iop.org/ar
 [astronet/](astronet/)
 
 * [TensorFlow](https://www.tensorflow.org/) code for:
-  * Downloading and preprocessing Kepler data.
+  * Downloading and preprocessing TESS data.
   * Building different types of neural network classification models.
   * Training and evaluating a new model.
   * Using a trained model to generate new predictions.
@@ -42,9 +42,8 @@ Full text available at [*The Astronomical Journal*](http://iopscience.iop.org/ar
 [light_curve_util/](light_curve_util)
 
 * Utilities for operating on light curves. These include:
-  * Reading Kepler data from `.fits` files.
-  * Applying a median filter to smooth and normalize a light curve.
-  * Phase folding, splitting, removing periodic events, etc.
+  * Reading TESS data from `.h5` files.
+  * Phase folding, splitting, binning, etc.
 * In addition, some C++ implementations of light curve utilities are located in
 [light_curve_util/cc/](light_curve_util/cc).
 
@@ -64,18 +63,6 @@ First, ensure that you have installed the following required packages:
 * **NumPy** ([instructions](https://docs.scipy.org/doc/numpy/user/install.html))
 * **AstroPy** ([instructions](http://www.astropy.org/))
 * **PyDl** ([instructions](https://pypi.python.org/pypi/pydl))
-* **Bazel** ([instructions](https://docs.bazel.build/versions/master/install.html))
-    * Optional
-* **Abseil Python Common Libraries** ([instructions](https://github.com/abseil/abseil-py))
-    * Optional: only required for unit tests.
-
-### Optional: Run Unit Tests
-
-Verify that all dependencies are satisfied by running the unit tests:
-
-```bash
-bazel test astronet/... light_curve_util/... third_party/...
-```
 
 ### Download TESS Data
 
@@ -165,12 +152,9 @@ Disclaimer: I haven't figured out how to make Bazel work, so just use the plain 
 
 To generate the training set:
 ```bash
-# Use Bazel to create executable Python scripts.
-#
-# Alternatively, since all code is pure Python and does not need to be compiled,
-# we could invoke the source scripts with the following addition to PYTHONPATH:
-#     export PYTHONPATH="/path/to/source/dir/:${PYTHONPATH}"
-bazel build astronet/...
+# The original Astronet used Bazel, but we could just invoke the source scripts with the 
+# following addition to PYTHONPATH:
+export PYTHONPATH="/path/to/source/dir/:${PYTHONPATH}"
 
 # Filename containing the CSV file of TCEs in the training set.
 TCE_CSV_FILE="astronet/tces.csv"
@@ -180,15 +164,8 @@ TFRECORD_DIR="astronet/tfrecord"
 
 # Directory where light curves are located.
 TESS_DATA_DIR="astronet/tess/"
-
-# Preprocess light curves into sharded TFRecord files using 5 worker processes.
-bazel-bin/astronet/data/generate_input_records \
-  --input_tce_csv_file=${TCE_CSV_FILE} \
-  --tess_data_dir=${TESS_DATA_DIR} \
-  --output_dir=${TFRECORD_DIR} \
-  --num_worker_processes=5
   
-# Or run without bazel
+# Run without bazel
 python astronet/data/generate_input_records.py \
 --input_tce_csv_file=${TCE_CSV_FILE} \
 --tess_data_dir=${TESS_DATA_DIR} \
@@ -274,16 +251,8 @@ run the following training script:
 ```bash
 # Directory to save model checkpoints into.
 MODEL_DIR="astronet/model/"
-
-# Run the training script.
-bazel-bin/astronet/train \
-  --model=AstroCNNModel \
-  --config_name=local_global \
-  --train_files=${TFRECORD_DIR}/train* \
-  --eval_files=${TFRECORD_DIR}/val* \
-  --model_dir=${MODEL_DIR}
   
-# Or without Bazel
+# Run without Bazel
 python astronet/train.py \
 --model=AstroCNNModel \
 --config_name=local_global \
@@ -322,14 +291,8 @@ be printed on the screen, and a summary file will also be written to the model
 directory, which will be visible in TensorBoard.
 
 ```bash
-# Run the evaluation script.
-bazel-bin/astronet/evaluate \
-  --model=AstroCNNModel \
-  --config_name=local_global \
-  --eval_files=${TFRECORD_DIR}/test* \
-  --model_dir=${MODEL_DIR}
   
-# Or without Bazel
+# Run evaluation script
 python astronet/evaluate.py \
 --model=AstroCNNModel \
 --config_name=local_global \
