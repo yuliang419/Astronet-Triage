@@ -9,8 +9,7 @@ Liang Yu: yuliang@mit.edu
 ## Background
 
 This directory contains TensorFlow models and data processing code for
-identifying exoplanets in astrophysical light curves. For complete background,
-see [our paper](http://adsabs.harvard.edu/abs/2018AJ....155...94S) in
+identifying exoplanets in astrophysical light curves. For complete background on how CNNs work for planet detection, see [Shallue & Vanderburg's paper](http://adsabs.harvard.edu/abs/2018AJ....155...94S) in
 *The Astronomical Journal*.
 
 For shorter summaries, see:
@@ -308,6 +307,14 @@ The TensorBoard server will show a page like this:
 
 The "loss" plot shows both training and validation losses. The optimum number of training steps is where validation loss reaches a minimum.
 
+### Model Averaging
+You can train a set of 10 models with random initializations and average their outputs when making predictions. This helps prevent overfitting and makes the model more robust. To do this, use the following command:
+
+```bash
+./astronet/ensemble_train.sh ${MODEL_DIR} 14000 ${TFRECORD_DIR}
+```
+The 14000 here is the number of train steps I used for each model. The code will produce 10 subdirectories under `${MODEL_DIR}`.
+
 ### Evaluate an AstroNet Model
 
 Run the following command to evaluate a model on the test set. The result will
@@ -339,18 +346,13 @@ INFO:tensorflow:Saving dict for global step 10000: accuracy/accuracy = 0.9625159
 To plot the misclassified TCEs and calculate precision and recall at various thresholds, do the following:
 
 ```bash
-python astronet/find_incorrect.py --model_dir=${MODEL_DIR} --tfrecord_dir=${TFRECORD_DIR} --suffix=yyy
+python astronet/find_incorrect.py --model_dir=${MODEL_DIR} --tfrecord_dir=${TFRECORD_DIR} --suffix=yyy --average
 ```
 
-This produces plots of the global and local views of misclassified TCEs in a folder called `astronet/plots` and generates a text file called `true_vs_pred_yyy.txt` with two columns: the true disposition of each TCEs in the test set (0 = junk, 1 = PC or EB), the predicted probability of each TCE being a positive. To plot the precision-recall curve, run `plot_roc.py` with the appropriate true_vs_pred file (you'll have to modify the code directly).
+This produces plots of the global and local views of misclassified TCEs in a folder called `astronet/plots` and generates a text file called `true_vs_pred_yyy.txt` with two columns: the true disposition of each TCEs in the test set (0 = junk, 1 = PC or EB), the predicted probability of each TCE being a positive. If you trained an ensemble of models and want to use model averaging, include a `--average` argument and make sure `${MODEL_DIR}` is set to the directory that contains the 10 subdirectories. If there's no `--average` argument, `${MODEL_DIR}` is just the directory containing your single model.
 
-### Model Averaging
-You can train a set of 10 models with random initializations and average their outputs when making predictions. This helps prevent overfitting and makes the model more robust. To do this, use the following command:
+To plot the precision-recall curve, run `plot_roc.py` with the appropriate true_vs_pred file (you'll have to modify the code directly).
 
-```bash
-./astronet/ensemble_train.sh ${MODEL_DIR} 14000 ${TFRECORD_DIR}
-```
-The 14000 here is the number of train steps I used for each model. The code will produce 10 subdirectories under `${MODEL_DIR}`.
 
 ### Make Predictions
 

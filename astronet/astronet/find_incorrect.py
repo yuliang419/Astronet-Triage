@@ -212,7 +212,7 @@ def main(_):
         y_pred_average.append([y_true, average_pred])
         cnt += 1
 
-    threshold = [0.2, 0.3, 0.4, 0.5, 0.6]
+    threshold = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
     y_true = np.array(y_pred_average)[:, 0]
     y_pred = np.array(y_pred_average)[:, 1]
     is_pc = np.array(is_pc)
@@ -221,8 +221,10 @@ def main(_):
       tp = len(np.where((y_true == 1) & (y_pred >= t))[0])
       fp = len(np.where((y_true == 0) & (y_pred >= t))[0])
       fn = len(np.where((y_true == 1) & (y_pred < t))[0])
+      tn = len(np.where((y_true == 0) & (y_pred < t))[0])
       precision = float(tp) / (tp + fp)
       recall = float(tp) / (tp + fn)
+      # print(float(fp) / tn)
 
       num_pc = len(np.where((is_pc == True) & (y_pred < t))[0])
 

@@ -289,7 +289,7 @@ def create_input_list():
     # FIXME: uncomment to exclude sector 4
     # tce_table = tce_table[tce_table['Sectors'] == 5]
 
-    tce_table = tce_table[tce_table['Transit Depth'] > 0]
+    tce_table = tce_table[tce_table['Transit_Depth'] > 0]
     tce_table["Duration"] /= 24  # Convert hours to days.
     tf.logging.info("Read TCE CSV file with %d rows.", len(tce_table))
 
