@@ -85,7 +85,7 @@ other phenomena.
 
 ![Kepler-934 Transits](docs/kepler-943-transits.png)
 
-**The CSV creation step needs to be run on PDO.**
+**The CSV creation step needs to be run on PDO, but I have included the complete CSV file (`astronet/tces.csv`) that I used to train the model.**
 
 The TESS TCE lists for each sector are available on the TEV website. Download them as CSVs, and run `make_catalog.py` in the `data` folder to create a catalog that combines all sectors. e.g.:
 
@@ -109,7 +109,7 @@ event in Barycentric Julian Day (BJD) minus a constant offset.
 * `Sectors`: Sector number.
 * `camera`: Camera number.
 * `ccd`: CCD number.
-* `star_rad`, `star_mass`, `teff`, `logg`: Stellar parameters from Gaia DR2 or the TIC.
+* `star_rad`, `star_mass`, `teff`, `logg`: Stellar parameters from Gaia DR2 or the TIC. Since a lot of TCEs are missing these values, we're not using them right now.
 * `SN`: Signal-to-pink noise ratio from BLS.
 * `q_ingress`: Fractional ingress duration from VARTOOLS.
 
