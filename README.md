@@ -1,4 +1,4 @@
-# AstroNet: A Neural Network for Identifying Exoplanets in Light Curves
+# AstroNet-Triage: A Neural Network for TESS Light Curve Triage
 
 ![Transit Animation](docs/transit.gif)
 
@@ -10,7 +10,7 @@ Liang Yu: yuliang@mit.edu
 
 This directory contains TensorFlow models and data processing code for
 identifying exoplanets in astrophysical light curves. For complete background on how CNNs work for planet detection, see [Shallue & Vanderburg's paper](http://adsabs.harvard.edu/abs/2018AJ....155...94S) in
-*The Astronomical Journal*.
+*The Astronomical Journal*. This is the triage version of our two TESS neural networks. For the vetting verison, see https://github.com/yuliang419/Astronet-Vetting.
 
 For shorter summaries, see:
 
