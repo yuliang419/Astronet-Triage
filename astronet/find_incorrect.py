@@ -224,7 +224,7 @@ def main(_):
       tn = len(np.where((y_true == 0) & (y_pred < t))[0])
       precision = float(tp) / (tp + fp)
       recall = float(tp) / (tp + fn)
-      # print(float(fp) / tn)
+      print(float(fp) / tn)
 
       num_pc = len(np.where((is_pc == True) & (y_pred < t))[0])
 
