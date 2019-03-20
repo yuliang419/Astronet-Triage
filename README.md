@@ -258,7 +258,8 @@ python astronet/train.py \
 --config_name=local_global \
 --train_files=${TFRECORD_DIR}/train* \
 --eval_files=${TFRECORD_DIR}/val* \
---model_dir=${MODEL_DIR}
+--model_dir=${MODEL_DIR} \
+--train_steps=14000
   
 ```
 Optionally, you can also run a [TensorBoard](https://www.tensorflow.org/guide/summaries_and_tensorboard)
