@@ -197,12 +197,12 @@ def main(_):
         is_pc.append(disposition == 'PC')
         average_pred = np.mean(y_pred[tce])
 
-        if average_pred >= 0.4:
+        if average_pred >= 0.1:
             label = "PC/EB"
         else:
             label = "junk"
 
-        if FLAGS.plot:
+        if FLAGS.plot and disposition == 'PC':
             kepid, sector = tce.split('-')
             ex = find_tce(int(kepid), int(sector))
             plot_tce(ex.features.feature["tic_id"].int64_list.value[0],

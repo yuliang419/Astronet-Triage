@@ -97,7 +97,7 @@ The output will be a CSV file named `tces.csv` (in the same directory as your in
 * `row_id`: Integer ID of the row in the TCE table.
 * `tic_id`: TIC ID of the target star.
 * `toi_id`: TCE number within the target star. These are structured funny so we'll ignore them for now.
-* `Disposition`: Final disposition from group vetting (should be one of the following: PC (planet candidate), EB (eclipsing binary), IS (instrumental noise), V (variability), O (other), J (junk).
+* `Disposition`: Final disposition from group vetting (should be one of the following: PC (planet candidate), EB (eclipsing binary), IS (instrumental noise), V (variability), O (other), J (junk). The J class includes a mix of V and IS. I didn't distinguish all of them since these two are always lumped together anyway.
 * `RA`: RA in degrees.
 * `DEC`: Dec in degrees.
 * `Tmag`: TESS magnitude.
