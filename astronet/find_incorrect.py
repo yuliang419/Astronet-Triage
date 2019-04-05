@@ -202,7 +202,7 @@ def main(_):
         else:
             label = "junk"
 
-        if FLAGS.plot and disposition == 'PC':
+        if FLAGS.plot and disposition == 'PC' and average_pred < 0.1:
             kepid, sector = tce.split('-')
             ex = find_tce(int(kepid), int(sector))
             plot_tce(ex.features.feature["tic_id"].int64_list.value[0],
@@ -224,7 +224,7 @@ def main(_):
       tn = len(np.where((y_true == 0) & (y_pred < t))[0])
       precision = float(tp) / (tp + fp)
       recall = float(tp) / (tp + fn)
-      print(float(fp) / tn)
+      print(1 - float(fp) / (tn + fp))
 
       num_pc = len(np.where((is_pc == True) & (y_pred < t))[0])
 
