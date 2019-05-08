@@ -289,6 +289,8 @@ You can train a set of 10 models with random initializations and average their o
 ```
 The 14000 here is the number of train steps I used for each model. The code will produce 10 subdirectories under `${MODEL_DIR}`.
 
+A fully trained, averaged model can be found under `astronet/models_final`.
+
 ### Evaluate an AstroNet Model
 
 Run the following command to evaluate a model on the test set. The result will

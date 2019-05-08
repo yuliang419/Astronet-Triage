@@ -62,7 +62,7 @@ def median_filter(x, y, num_bins, bin_width=None, x_min=None, x_max=None):
   # Validate the lengths of x and y.
   x_len = len(x)
   if x_len < 2:
-    raise ValueError("len(x) must be at least 2. Got: %s" % x_len)
+    raise SparseLightCurveError("len(x) must be at least 2. Got: %s" % x_len)
   if x_len != len(y):
     raise ValueError("len(x) (got: %d) must equal len(y) (got: %d)" % (x_len,
                                                                        len(y)))

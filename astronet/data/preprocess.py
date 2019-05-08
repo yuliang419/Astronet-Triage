@@ -27,12 +27,16 @@ from light_curve_util import util
 from statsmodels.robust import scale
 
 
+# use this to trim multi-sector light curves to just the latest sector
+sector_start = {2: 1354.10475587519, 3: 1381.70892156158, 4: 1410.91724195171, 5: 1437.97973532546}
+
+
 class EmptyLightCurveError(Exception):
     """Indicates light curve with no points in chosen time range."""
     pass
 
 
-def read_and_process_light_curve(tic, tess_data_dir, sector=1, injected=False, inject_dir='/pdo/users/yuliang'):
+def read_and_process_light_curve(tic, tess_data_dir, sector=1, injected=False, inject_dir='/pdo/users/yuliang', is_multi=False):
   """Reads an already detrended light curve.
 
   Args:
@@ -65,6 +69,11 @@ def read_and_process_light_curve(tic, tess_data_dir, sector=1, injected=False, i
   all_mag = all_mag[valid_indices]
   all_time = all_time[valid_indices]
   all_flux = 10.**(-(all_mag - np.median(all_mag))/2.5)
+
+  if sector > 1 and is_multi:
+      current = np.where(all_time >= sector_start[sector])
+      all_time = all_time[current]
+      all_flux = all_flux[current]
   return all_time, all_flux
 
 
