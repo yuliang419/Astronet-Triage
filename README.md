@@ -21,9 +21,9 @@ For shorter summaries, see:
 
 ## Citation
 
-A paper that summarizes this code is available [here](https://arxiv.org/abs/1904.02726). The paper has been submitted to AJ and is currently under review. Please cite it if you make use of this code:
+A paper that summarizes this code is available [here](https://arxiv.org/abs/1904.02726) and at [*The Astronomical Journal*](https://iopscience.iop.org/article/10.3847/1538-3881/ab21d6). Please cite it if you make use of this code:
 
-Yu, L. et al. (2019). Identifying Exoplanets with Deep Learning III: Automated Triage and Vetting of TESS Candidates. arXiv:1904.02726
+Yu, L. et al. (2019). Identifying Exoplanets with Deep Learning III: Automated Triage and Vetting of TESS Candidates. *The Astronomical Journal*, 158(1), 25.
 
 See also the original Shallue & Vanderburg paper:
 
